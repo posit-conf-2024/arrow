@@ -3,7 +3,7 @@ Big Data with Arrow
 
 ### posit::conf(2024)
 
-by INSTRUCTOR_NAME
+by Nic Crane, Stephanie Hazlitt
 
 -----
 
