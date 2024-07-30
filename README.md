@@ -1,66 +1,51 @@
-Big Data with Arrow
-================
+# Big Data in R with Arrow
 
-### posit::conf(2024)
+**posit::conf 2024**
 
-by Nic Crane, Stephanie Hazlitt
+by Nic Crane & Steph Hazlitt
 
------
+------------------------------------------------------------------------
 
-INSTRUCTIONS FOR INSTRUCTORS: Please insert information about your
-workshop below. Then, add workshop content in the materials folder and
-link to each session’s materials from the schedule below. You are
-welcomed to add more rows to the schedule. We just ask that you take
-breaks at the specified times. Once you are done adding information, you
-can remove these instructions from the README.
+:spiral_calendar: August 12th, 2024\
+:alarm_clock: 09:00 - 17:00\
+:hotel: ADD-ROOM\
+:writing_hand: [pos.it/conf](http://pos.it/conf)
 
-Alternatively, you can completely redo the organization of this repo 
-as a Quarto website or some other format you prefer to host your workshop
-materials. The only requirement is that your workshop materials are hosted 
-here.
+------------------------------------------------------------------------
 
------
+### Workshop Website
 
-:spiral_calendar: August 12, 2024  
-:alarm_clock:     09:00 - 17:00  
-:hotel:           ROOM TBD  
-:writing_hand:    [pos.it/conf](http://pos.it/conf)
+This repository contains materials for the 1-day **Big Data in R with Arrow** workshop at Posit::conf(2024). See [pos.it/arrow-conf24](https://pos.it/arrow-conf24) for rendered workshop materials, including slides and exercises.
 
------
+### Workshop Overview
 
-## Description
+Data analysis pipelines with larger-than-memory data are becoming more and more commonplace. In this workshop you will be introduced to Apache Arrow, a multi-language toolbox for working with larger-than-memory tabular data, to create seamless “big” data analysis pipelines with R.
 
-ADD DESCRIPTION
+This workshop will focus on using the the arrow R package—a mature R interface to Apache Arrow—to process larger-than-memory files and multi-file data sets with arrow using familiar dplyr syntax. You’ll learn to create and use the interoperable data file format Parquet for efficient data storage and access, with data stored both on disk and in the cloud, and also how to exercise fine control over data types to avoid common large data pipeline problems. Designed for new-to-arrow R users, this workshop will provide a foundation for using Arrow, giving you access to a powerful suite of tools for performant analysis of larger-than-memory tabular data in R.
 
-## Audience
+*This course is for you if you:*
 
-ADD AUDIENCE INFO
+-   want to learn how to work with tabular data that is too large to fit in memory using existing R and tidyverse syntax implemented in Arrow
 
-## Prework
+-   want to learn about Parquet, a powerful file format alternative to CSV files
 
-ADD INFORMATION YOU WANT LEARNERS TO HAVE / STEPS THEY WANT THEM TO
-COMPLETE PRIOR TO THE WORKSHOP. THIS COULD BE A LINK TO A THREAD ON
-RSTUDIO COMMUNITY, PACKAGE INSTALL INSTRUCTIONS, HOW TO GET AN
-RSTUDIO.CLOUD ACCOUNT, ETC.
+-   want to learn how to engineer your tabular data storage for more performant access and analysis with Apache Arrow
 
-## Schedule
+### Instructors
 
-| Time          | Activity         |
-| :------------ | :--------------- |
-| 09:00 - 10:30 | Session 1        |
-| 10:30 - 11:00 | *Coffee break*   |
-| 11:00 - 12:30 | Session 2        |
-| 12:30 - 13:30 | *Lunch break*    |
-| 13:30 - 15:00 | Session 3        |
-| 15:00 - 15:30 | *Coffee break*   |
-| 15:30 - 17:00 | Session 4        |
+[**Nic Crane**](https://niccrane.com) is an R consultant with a background in data science and software engineering. They are passionate about open source, and learning and teaching all things R. Nic is part of the core team that maintain the Arrow R package, and a co-author of "Scaling up with R and Arrow", due to be published by CRC Press later this year.
 
-## Instructor(s)
+**Steph Hazlitt** is a data scientist, researcher and R enthusiast. She has spent the better part of her career wrangling data with R and supporting people and teams in creating and sharing data science-related products and open source software. Steph is the Director of Data Science Partnerships with BC Stats.
 
-ADD INSTRUCTOR(S) BIO
+### Acknowledgements
 
------
+Some of this `Big Data in R with Arrow` workshop materials draw on other open-licensed teaching content which we would like to acknowledge:
 
-![](https://i.creativecommons.org/l/by/4.0/88x31.png) This work is
-licensed under a [Creative Commons Attribution 4.0 International
-License](https://creativecommons.org/licenses/by/4.0/).
+-   [useR!2022 virtual Larger-Than-Memory Data Workflows with Apache Arrow tutorial](https://github.com/djnavarro/arrow-user2022) authored by Danielle Navarro
+-   [R for Data Science (2e)](https://r4ds.hadley.nz/) written by Hadley Wickham, Mine Çetinkaya-Rundel, and Garrett Grolemund---with thanks to Danielle Navarro who contributed the initial version of the [Arrow chapter](https://r4ds.hadley.nz/arrow)
+-   [How to use Arrow to work with large CSV files? blog post](https://francoismichonneau.net/2022/10/import-big-csv/) by François Michonneau, which introduces the single vs multi-file API models for learning/teaching Arrow
+-   [Big Data in R with Arrow 1-Day Posit::Conf (2023) Workshop](https://posit-conf-2023.github.io/arrow/) by Steph Hazlitt & Nic Crane, an earlier version of this 1-day course.
+
+------------------------------------------------------------------------
+
+![](https://i.creativecommons.org/l/by/4.0/88x31.png) This work is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).

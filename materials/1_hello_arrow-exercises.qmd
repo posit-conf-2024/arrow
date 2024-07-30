@@ -1,0 +1,114 @@
+---
+title: "Hello Arrow Exercises"
+execute:
+  echo: true
+  messages: false
+  warning: false
+editor: source
+---
+
+```{r}
+#| label: load-packages
+library(arrow)
+library(dplyr)
+```
+
+```{r}
+#| label: taxi-size
+#| include: false
+#| eval: false
+taxi_size <- tibble(
+  files = list.files("data/nyc-taxi/", recursive = TRUE),
+  size_GB = file.size(file.path("data/nyc-taxi", files)) / 10**9
+)
+taxi_size
+
+taxi_size |> summarise(total_GB = sum(size_GB))
+```
+
+```{r}
+#| label: open-dataset
+nyc_taxi <- open_dataset("data/nyc-taxi/")
+```
+
+```{r}
+#| label: nrow
+#| include: false
+#| eval: false
+nyc_taxi |> 
+  nrow()
+```
+
+```{r}
+#| label: first-dplyr-pipeline
+#| include: false
+#| eval: false
+nyc_taxi |>
+  filter(year %in% 2014:2017) |> 
+  group_by(year) |>
+  summarize(
+    all_trips = n(),
+    shared_trips = sum(passenger_count > 1, na.rm = TRUE)
+  ) |>
+  mutate(pct_shared = shared_trips / all_trips * 100) |>
+  collect()
+```
+
+::: {#exercise-hello-nyc-taxi .callout-tip}
+## First dplyr pipeline with Arrow
+
+::: panel-tabset
+## Problems
+
+1.  Calculate the longest trip distance for every month in 2019
+
+2.  How long did this query take to run?
+
+## Solution 1
+
+Longest trip distance for every month in 2019:
+
+```{r}
+#| label: first-dplyr-exercise1
+nyc_taxi |> 
+  filter(year == 2019) |>
+  group_by(month) |>
+  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |>
+  arrange(month) |> 
+  collect()
+```
+
+## Solution 2
+
+Compute time:
+
+```{r}
+#| label: first-dplyr-exercise2
+library(tictoc)
+
+tic()
+nyc_taxi |> 
+  filter(year == 2019) |>
+  group_by(month) |>
+  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |>
+  arrange(month) |> 
+  collect()
+toc()
+```
+
+or 
+
+```{r}
+#| label: first-dplyr-exercise2alt
+
+nyc_taxi |> 
+  filter(year == 2019) |>
+  group_by(month) |>
+  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |>
+  arrange(month) |> 
+  collect() |> 
+  system.time()
+```
+
+:::
+:::

@@ -1,0 +1,77 @@
+project:
+  type: website
+  render:
+    - "*.qmd"
+  execute-dir: project
+
+website:
+  title: "Big Data in R with Arrow"
+  navbar:
+    background: dark
+    logo: "materials/images/logo.png"
+    right:
+      - icon: file-certificate
+        href: license-web.qmd
+      - icon: github
+        href: https://github.com/posit-conf-2024/arrow
+        text: GitHub
+
+    left:
+      - href: index.qmd
+        text: Home
+      - href: setup.qmd
+        text: Packages & Data
+      - text: Slides
+        menu:
+        - text: "Welcome 👋"
+          href: materials/0_housekeeping.qmd
+          target: "_blank"
+        - text: "Hello Arrow"
+          href: materials/1_hello_arrow.qmd
+          target: "_blank"
+        - text: "Manipulating Data with Arrow (Part I)"
+          href: materials/2_data_manipulation_1.qmd
+          target: "_blank"
+        - text: "Data Engineering with Arrow"
+          href: materials/3_data_engineering.qmd
+          target: "_blank"
+        - text: "Arrow In-Memory Workflows"
+          href: materials/5_arrow_single_file.qmd
+          target: "_blank"
+        - text: "Manipulating Data with Arrow (Part II)"
+          href: materials/4_data_manipulation_2.qmd
+          target: "_blank"
+        - text: "Wrapping Up: Arrow & R Together"
+          href: materials/6_wrapping_up.qmd
+          target: "_blank"
+        - text: "Getting Help & More Resources"
+          href: materials/7_continue_learning.qmd
+          target: "_blank"
+        - text: "Thank you 👋"
+          href: materials/8_closing.qmd
+          target: "_blank"
+      - text: Exercises
+        menu:
+        - text: "Hello Arrow Exercises"
+          href: materials/1_hello_arrow-exercises.qmd
+        - text: "Data Manipulation Part I Exercises"
+          href: materials/2_data_manipulation_1-exercises.qmd
+        - text: "Data Engineering Exercises"
+          href: materials/3_data_engineering-exercises.qmd
+        - text: "Arrow In-Memory Workflow Exercises"
+          href: materials/5_arrow_single_file-exercises.qmd
+        - text: "Data Manipulation Part II Exercises"
+          href: materials/4_data_manipulation_2-exercises.qmd
+
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    link-external-newwindow: true
+
+editor: visual
+engine: knitr
+execute:
+  freeze: auto

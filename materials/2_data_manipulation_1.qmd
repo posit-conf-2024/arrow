@@ -1,0 +1,394 @@
+---
+footer: "[🔗 pos.it/arrow-conf24](https://pos.it/arrow-conf24)"
+logo: "images/logo.png"
+execute:
+  echo: true
+format:
+  revealjs: 
+    theme: default
+engine: knitr
+editor: source
+---
+
+# Data Manipulation---Part 1 {#data-manip-1}
+
+```{r}
+#| label: setup-data-manip
+#| message: false
+#| echo: false
+
+library(arrow)
+library(dplyr)
+library(duckdb)
+library(lubridate)
+library(stringr)
+```
+
+## Goals
+
+Avoiding these! But...don't worry!
+
+![](images/segfault.png)
+
+## An Arrow Dataset
+
+```{r}
+#| label: setup-data-manip1-2
+
+library(arrow)
+
+nyc_taxi <- open_dataset("data/nyc-taxi/")
+nyc_taxi
+```
+## Arrow Datasets
+
+![](images/nyc_taxi_dataset.png)
+
+
+## Constructing queries
+
+```{r}
+#| label: shared-rides
+
+library(dplyr)
+
+shared_rides <- nyc_taxi |>
+  group_by(year) |>
+  summarize(
+    all_trips = n(),
+    shared_trips = sum(passenger_count > 1, na.rm = TRUE)
+  ) |>
+  mutate(pct_shared = shared_trips / all_trips * 100) 
+
+class(shared_rides)
+```
+## arrow dplyr queries
+
+-   query has been constructed but not evaluated
+-   nothing has been pulled into memory
+
+## Running the query
+
+-   `collect()` evaluates the query, in-memory output returns to R
+
+## `collect()`
+
+```{r}
+#| label: collect
+
+collect(shared_rides)
+```
+
+## Calling `nrow()` to see how much data
+
+```{r}
+#| label: nrow
+
+nyc_taxi |>
+  filter(year %in% 2017:2021) |>
+  nrow()
+```
+
+## Your Turn
+
+Use the function `nrow()` to work out the answers to these questions:
+
+1.  How many taxi fares in the dataset had a total amount greater than \$100?
+
+➡️ [Data Manipulation Part I Exercises Page](2_data_manipulation_1-exercises.html)
+
+
+## Previewing output for large queries
+
+How much were fares in GBP (£)?
+
+```{r}
+#| label: fares-gbp
+
+fares_pounds <- nyc_taxi |>
+  mutate(
+    fare_amount_pounds = fare_amount * 0.79
+  )
+```
+
+How many rows?
+
+```{r}
+#| label: fares-pounds
+
+fares_pounds |>
+  nrow()
+```
+
+## Use `head()` and `collect()` to preview results
+
+```{r}
+#| label: fares-gbp-head
+nyc_taxi |>
+  filter(year == 2020) |>
+  mutate(fare_pounds = fare_amount * 0.79) |>
+  select(fare_amount, fare_pounds) |>
+  head() |>
+  collect()
+```
+
+## Use `across()` to transform data in multiple columns
+
+```{r}
+#| label: across
+
+nyc_taxi |>
+  mutate(across(ends_with("amount"), list(pounds = ~.x * 0.79))) |>
+  select(contains("amount")) |>
+  head() |>
+  collect()
+```
+
+## Summary
+
+-   Use `nrow()` to work out how many rows of data your analyses will return
+-   Use `collect()` to pull all of the data into your R session
+-   Use `head()` and `collect()` to preview results
+-   Use `across()` to manipulate data in multiple columns at once
+
+# dplyr verbs API in arrow - alternatives
+
+## Example - `slice()`
+
+First three trips in the dataset in 2021 where distance \> 100 miles
+
+```{r}
+#| label: no-slice
+#| error: true
+
+long_rides_2021 <- nyc_taxi |>
+  filter(year == 2021 & trip_distance > 100) |>
+  select(pickup_datetime, year, trip_distance)
+
+long_rides_2021 |>
+  slice(1:3)
+```
+
+## Head to the docs!
+
+```{r}
+#| label: get-help
+#| eval: false
+
+?`arrow-dplyr`
+```
+
+or view them at <https://arrow.apache.org/docs/r/reference/acero.html>
+
+## A different function
+
+```{r}
+#| label: slice-max
+
+long_rides_2021 |>
+  slice_max(n = 3, order_by = trip_distance, with_ties = FALSE) |>
+  collect()
+```
+
+## Or call `collect()` first
+
+```{r}
+#| label: collect-first
+
+long_rides_2021 |>
+  collect() |>
+  slice(1:3)
+```
+
+## tidyr functions - pivot
+
+```{r}
+#| label: pivot-fails
+#| error: true
+
+library(tidyr)
+
+nyc_taxi |> 
+  group_by(vendor_name) |>
+  summarise(max_fare = max(fare_amount)) |>
+  pivot_longer(!vendor_name, names_to = "metric") |> 
+  collect()
+```
+
+## duckdb
+
+* in-memory database
+* columnar
+* understands Arrow format
+
+## sharing data with duckdb and arrow
+
+![](images/dplyr-arrow-duckdb.png)
+
+## tidyr functions - pivot with duckdb!
+
+```{r}
+#| label: pivot-duckdb
+
+library(duckdb)
+
+nyc_taxi |> 
+  group_by(vendor_name) |>
+  summarise(max_fare = max(fare_amount)) |>
+  to_duckdb() |> # send data to duckdb
+  pivot_longer(!vendor_name, names_to = "metric") |> 
+  to_arrow() |> # return data back to arrow
+  collect()
+```
+
+# Using functions inside verbs
+
+## Using functions inside verbs
+
+-   lots of the [lubridate](https://lubridate.tidyverse.org/) and [stringr](https://stringr.tidyverse.org/) APIs supported!
+-   base R and others too - always good to check the docs
+
+## Morning vs afternoon with namespacing
+
+```{r, `code-line-numbers`="3"}
+#| label: namespacing
+
+nyc_taxi |>
+  group_by(
+    time_of_day = ifelse(lubridate::am(pickup_datetime), "morning", "afternoon")
+  ) |>
+  count() |>
+  collect()
+```
+
+## Morning vs afternoon - without namespacing
+
+```{r, `code-line-numbers`="5"}
+#| label: no-namespacing
+
+library(lubridate)
+
+nyc_taxi |>
+  group_by(
+    time_of_day = ifelse(am(pickup_datetime), "morning", "afternoon")
+  ) |>
+  count() |>
+  collect()
+```
+
+## How does this work?
+
+![](images/dplyr-backend.png)
+
+## arrow C++
+
+![](images/arrow_cpp_functions.png)
+
+## arrow dplyr queries
+
+![](images/arrow_dplyr_query.png)
+
+## What if a function isn't implemented?
+
+```{r}
+#| label: na_if_errors
+#| error: true
+nyc_taxi |>
+  mutate(vendor_name = na_if(vendor_name, "CMT")) |>
+  head() |>
+  collect()
+```
+
+## Head to the docs again to see what's implemented!
+
+```{r}
+#| label: get-help-funcs
+
+?`arrow-dplyr`
+```
+
+or view them at <https://arrow.apache.org/docs/r/reference/acero.html>
+
+## Option 1 - find a workaround!
+
+```{r}
+#| label: na_if_workaround
+nyc_taxi |>
+  mutate(vendor_name = ifelse(vendor_name == "CMT", NA, vendor_name)) |>
+  head() |>
+  collect()
+```
+
+## Option 2
+
+-   In data manipulation part 2!
+
+## Your Turn
+
+1.  Use the `dplyr::filter()` and `stringr::str_ends()` functions to return a subset of the data which is a) from September 2020, and b) the value in `vendor_name` ends with the letter "S".
+
+2.  Try to use the `stringr` function `str_replace_na()` to replace any `NA` values in the `vendor_name` column with the string "No vendor" instead. What happens, and why?
+
+3.  Bonus question: see if you can find a different way of completing the task in question 2.
+
+➡️ [Data Manipulation Part I Exercises Page](2_data_manipulation_1-exercises.html)
+
+## Working with custom functions
+
+Arrow 17.0.0 or later!
+
+```{r}
+#| label: custom_func
+#| eval: false
+time_text <- function(time){
+  day_of_week <- wday(time, label = TRUE, abbr = FALSE)
+  time_of_day <- ifelse(lubridate::am(time), "AM", "PM")
+  paste(day_of_week, time_of_day)
+}
+
+nyc_taxi |>
+  mutate(pickup_text = time_text(pickup_datetime)) |>
+  select(pickup_datetime, pickup_text) |>
+  head() |>
+  collect() 
+```
+```{r}
+#| echo: false
+tibble::tibble(pickup_datetime = structure(c(1326055838, 1326055921, 
+1325990366, 1325990449, 1326080557, 1326055907), class = c("POSIXct", 
+"POSIXt")), pickup_text = c("Sunday PM", "Sunday PM", "Sunday AM", 
+"Sunday AM", "Monday AM", "Sunday PM"))
+```
+## How did that work?
+
+Custom function converted to Arrow Expression; query doesn't contain any reference to the `time_text()` function.
+
+```{r}
+#| label: custom_func_show_more
+#| eval: false
+nyc_taxi |>
+  mutate(pickup_text = time_text(pickup_datetime)) |>
+  select(pickup_datetime, pickup_text)
+```
+```{r}
+#| label: show-func-output
+#| echo: false
+cat(
+'FileSystemDataset (query)
+pickup_datetime: timestamp[ms]
+pickup_text: string (binary_join_element_wise(cast(strftime(pickup_datetime, {format="%A"}), {to_type=string, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false}), cast(if_else((hour(pickup_datetime) < 12), "AM", "PM"), {to_type=string, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false}), " ", {null_handling=REPLACE, null_replacement="NA"}))
+
+See $.data for the source Arrow object'
+)
+```
+## Anything else to be aware of?
+
+* arrow 17.0.0 or later
+* this will only work for functions which have Arrow bindings
+* use `` ?`arrow-dplyr` `` to see which ones do
+
+## Summary
+
+-   Working with Arrow Datasets allow you to manipulate data which is larger-than-memory
+-   You can use many dplyr functions with arrow - run `` ?`arrow-dplyr` `` to view the docs
+-   You can pass data to duckdb to use functions implemented in duckdb but not arrow

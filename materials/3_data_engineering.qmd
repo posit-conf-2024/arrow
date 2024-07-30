@@ -1,0 +1,522 @@
+---
+footer: "[🔗 pos.it/arrow-conf24](https://pos.it/arrow-conf24)"
+logo: "images/logo.png"
+execute:
+  echo: true
+format:
+  revealjs: 
+    theme: default
+engine: knitr
+editor: source
+---
+
+```{r}
+#| label: setup-eng
+#| echo: false
+library(arrow)
+library(dplyr)
+library(tictoc)
+
+
+seattle_parquet <- "data/seattle-library-checkouts-parquet"
+seattle_parquet_part <- "data/seattle-library-checkouts"
+```
+
+# Data Engineering with Arrow {#data-eng-storage}
+
+## Data Engineering
+
+<br>
+
+![](images/data-engineering.png)
+
+<br>
+
+::: {style="font-size: 70%;"}
+<https://en.wikipedia.org/wiki/Data_engineering>
+:::
+
+## .NORM Files
+
+![](images/norm_normal_file_format_2x.png){.absolute top="0" left="400"}
+
+<br>
+
+::: {style="font-size: 70%;"}
+<https://xkcd.com/2116/>
+:::
+
+## Poll: Formats
+
+<br>
+
+**Which file formats do you use most often?**
+
+<br> 
+
+- 1️⃣ CSV (.csv)
+- 2️⃣ MS Excel (.xls and .xlsx)
+- 3️⃣ Parquet (.parquet)
+- 4️⃣ Something else
+
+
+## Arrow & File Formats
+
+![](images/arrow-read-write-updated.png)
+
+## Seattle<br>Checkouts<br>Big CSV
+
+![](images/seattle-checkouts.png){.absolute top="0" left="300"}
+
+::: {style="font-size: 60%; margin-top: 440px; margin-left: 330px;"}
+<https://data.seattle.gov/Community/Checkouts-by-Title/tmmm-ytt6>
+:::
+
+## Dataset contents
+
+![](images/datapreview.png){height="550"}
+
+## arrow::open_dataset() with a CSV
+
+```{r}
+#| label: open-seattle-data
+library(arrow)
+library(dplyr)
+
+
+seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
+               format = "csv")
+seattle_csv
+```
+
+## arrow::schema()
+
+> Create a schema or extract one from an object.
+
+<br>
+
+Let's extract the schema:
+
+```{r}
+#| label: seattle-schema
+schema(seattle_csv)
+```
+
+## Arrow Data Types
+
+Arrow has a rich data type system, including direct analogs of many R data types
+
+-   `<dbl>` == `<double>`
+-   `<chr>` == `<string>` OR `<utf8>` (aliases)
+-   `<int>` == `<int32>`
+
+<br>
+
+<https://arrow.apache.org/docs/r/articles/data_types.html>
+
+## Parsing the Metadata
+
+<br>
+
+Arrow scans 👀 1MB of data to impute or "guess" the data types
+
+::: {style="font-size: 80%; margin-top: 200px;"}
+📚 arrow vs readr blog post: <https://thisisnic.github.io/2022/11/21/type-inference-in-readr-and-arrow/>
+:::
+
+## Parsers Are Not Always Right
+
+```{r}
+#| label: seattle-schema-again
+schema(seattle_csv)
+```
+
+![](images/data-dict.png){.absolute top="300" left="330" width="700"}
+
+::: notes
+International Standard Book Number (ISBN) is a 13-digit number that uniquely identifies books and book-like products published internationally.
+
+Data Dictionaries, metadata in data catalogues should provide this info.
+
+The number or rows used to infer the schema will vary depending on the data in each column, total number of columns, and how many bytes each value takes up in memory. 
+
+If all of the values in a column that lie within the first 1MB of the file are missing values, arrow will classify this data as null type. ISBN! Phone numbers, zip codes, leading zeros...
+
+Recommended specifying a schema when working with CSV datasets to avoid potential issues like this
+:::
+
+## Let's Control the Schema
+
+Creating a schema manually:
+
+```{r}
+#| label: seattle-schema-write
+#| eval: false
+schema(
+  UsageClass = utf8(),
+  CheckoutType = utf8(),
+  MaterialType = utf8(),
+  CheckoutYear = int64(),
+  CheckoutMonth = int64(),
+  Checkouts = int64(),
+  Title = utf8(),
+  ISBN = string(), #utf8()
+  Creator = utf8(),
+  Subjects = utf8(),
+  Publisher = utf8(),
+  PublicationYear = utf8()
+)
+```
+
+<br>
+
+This will take a lot of typing with 12 columns 😢
+
+## Let's Control the Schema
+
+Use the code() method to extract the code from the schema:
+
+```{r}
+#| label: seattle-schema-code
+seattle_csv$schema$code() 
+```
+
+<br>
+
+🤩
+
+## Let's Control the Schema
+
+Schema defines column names and types, so we need to skip the first row (skip = 1):
+
+```{r}
+#| label: seattle-schema-control
+#| code-line-numbers: "|12"
+seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
+  format = "csv",
+  skip = 1,
+  schema = schema(
+    UsageClass = utf8(),
+    CheckoutType = utf8(),
+    MaterialType = utf8(),
+    CheckoutYear = int64(),
+    CheckoutMonth = int64(),
+    Checkouts = int64(),
+    Title = utf8(),
+    ISBN = string(), #utf8()
+    Creator = utf8(),
+    Subjects = utf8(),
+    Publisher = utf8(),
+    PublicationYear = utf8()
+  )
+)
+seattle_csv
+```
+
+## Let's Control the Schema
+
+Supply column types for a subset of columns by providing a partial schema:
+
+```{r}
+#| label: seattle-schema-partial
+seattle_csv <- open_dataset(
+  sources = "data/seattle-library-checkouts.csv",
+  format = "csv",
+  col_types = schema(ISBN = string()) #utf8()
+)
+seattle_csv
+```
+
+
+## Your Turn
+
+1.  The first few thousand rows of `ISBN` are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with `open_dataset()` and ensure the correct data type for `ISBN` is `<string>` instead of the `<null>` interpreted by Arrow.
+
+2.  Once you have a `Dataset` object with the metadata you are after, count the number of `Checkouts` by `CheckoutYear` and arrange the result by `CheckoutYear`.
+
+➡️ [Data Storage Engineering Exercises Page](3_data_engineering-exercises.html)
+
+## 9GB CSV file + arrow + dplyr
+
+```{r}
+#| label: seattle-dplyr
+seattle_csv |>
+  group_by(CheckoutYear) |>
+  summarise(sum(Checkouts)) |>
+  arrange(CheckoutYear) |> 
+  collect()
+```
+
+## 9GB CSV file + arrow + dplyr
+
+```{r}
+#| label: seattle-dplyr-timed
+#| code-line-numbers: "6"
+seattle_csv |>
+  group_by(CheckoutYear) |>
+  summarise(sum(Checkouts)) |>
+  arrange(CheckoutYear) |> 
+  collect() |>
+  system.time()
+```
+
+42 million rows -- not bad, but could be faster....
+
+## File Format: Apache Parquet
+
+![](images/apache-parquet.png){.absolute top="100" left="200" width="700"}
+
+::: {style="font-size: 60%; margin-top: 450px;"}
+<https://parquet.apache.org/>
+:::
+
+
+## Parquet Files: "row-chunked"
+
+![](images/parquet-chunking.png)
+
+## Parquet Files: "row-chunked & column-oriented"
+
+![](images/parquet-columnar.png)
+
+## Parquet
+
+-   compression and encoding == usually much smaller than equivalent CSV file, less data to move from disk to memory
+-   rich type system & stores the schema along with the data == more robust pipelines
+-   "row-chunked & column-oriented" == work on different parts of the file at the same time or skip some chunks all together, better performance than row-by-row
+
+::: notes
+-   efficient encodings to keep file size down, and supports file compression, less data to move from disk to memory
+-   CSV has no info about data types, inferred by each parser
+:::
+
+
+## Writing to Parquet
+
+```{r}
+#| label: seattle-write-parquet-single
+#| eval: false
+
+seattle_parquet <- "data/seattle-library-checkouts-parquet"
+
+seattle_csv |>
+  write_dataset(path = seattle_parquet,
+                format = "parquet")
+```
+
+## Storage: Parquet vs CSV
+
+```{r}
+#| label: seattle-single-parquet-size
+file <- list.files(seattle_parquet)
+file.size(file.path(seattle_parquet, file)) / 10**9
+```
+
+<br>
+
+Parquet about half the size of the CSV file on-disk 💾
+
+## Your Turn
+
+1.  Re-run the query counting the number of `Checkouts` by `CheckoutYear` and arranging the result by `CheckoutYear`, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?
+
+➡️ [Data Storage Engineering Exercises Page](3_data_engineering-exercises.html)
+
+## 4.5GB Parquet file + arrow + dplyr
+
+```{r}
+#| label: seattle-single-parquet-dplyr-timed
+open_dataset(sources = seattle_parquet, 
+             format = "parquet") |>
+  group_by(CheckoutYear) |>
+  summarise(sum(Checkouts)) |>
+  arrange(CheckoutYear) |> 
+  collect() |>
+  system.time()
+```
+
+42 million rows -- much better! But could be *even* faster....
+
+## File Storage:<br>Partitioning
+
+<br>
+
+::: columns
+::: {.column width="50%"}
+Dividing data into smaller pieces, making it more easily accessible and manageable
+:::
+
+::: {.column width="50%"}
+![](images/partitions.png){.absolute top="0"}
+:::
+:::
+
+::: notes
+also called multi-files or sometimes shards
+:::
+
+## Poll: Partitioning?
+
+Have you partitioned your data or used partitioned data before today?
+
+<br>
+
+- 1️⃣ Yes
+- 2️⃣ No
+- 3️⃣ Not sure, the data engineers sort that out!
+
+## Art & Science of Partitioning
+
+<br>
+
+-   avoid files \< 20MB and \> 2GB
+-   avoid \> 10,000 files (🤯)
+-   partition on variables used in `filter()`
+
+::: notes
+-   guidelines not rules, results vary
+-   experiment, especially with cloud
+-   arrow suggests avoid files smaller than 20MB and larger than 2GB
+-   avoid partitions that produce more than 10,000 files
+-   partition by variables that you filter by, allows arrow to only read relevant files
+:::
+
+## Rewriting the Data Again
+
+```{r}
+#| label: seattle-write-partitioned
+#| eval: false
+
+seattle_parquet_part <- "data/seattle-library-checkouts"
+
+seattle_csv |>
+  group_by(CheckoutYear) |>
+  write_dataset(path = seattle_parquet_part,
+                format = "parquet")
+```
+
+## What Did We "Engineer"?
+
+```{r}
+#| label: seattle-partitioned-sizes
+
+seattle_parquet_part <- "data/seattle-library-checkouts"
+
+sizes <- tibble(
+  files = list.files(seattle_parquet_part, recursive = TRUE),
+  size_GB = file.size(file.path(seattle_parquet_part, files)) / 10**9
+)
+
+sizes
+```
+
+## 4.5GB partitioned Parquet files + arrow + dplyr
+
+```{r}
+#| label: seattle-partitioned-dplyr-timed
+
+seattle_parquet_part <- "data/seattle-library-checkouts"
+
+open_dataset(sources = seattle_parquet_part,
+             format = "parquet") |>
+  group_by(CheckoutYear) |>
+  summarise(sum(Checkouts)) |>
+  arrange(CheckoutYear) |> 
+  collect() |>
+  system.time()
+```
+
+<br>
+
+42 million rows -- not too shabby!
+
+## Your Turn
+
+1.  Let's write the Seattle Checkout CSV data to a multi-file dataset just one more time! This time, write the data partitioned by `CheckoutType` as Parquet files.
+
+2.  Now compare the compute time between our Parquet data partitioned by `CheckoutYear` and our Parquet data partitioned by `CheckoutType` with a query of the total number of checkouts in September of 2019. Did you find a difference in compute time?
+
+➡️ [Data Storage Engineering Exercises Page](3_data_engineering-exercises.html)
+
+
+## Partitions & NA Values
+
+ADD content
+
+## Partition Design
+
+::: columns
+::: {.column width="50%"}
+-   Partitioning on variables commonly used in `filter()` often faster
+-   Number of partitions also important (Arrow reads the metadata of each file)
+:::
+
+::: {.column width="50%"}
+![](images/partitions.png){.absolute top="0"}
+:::
+:::
+
+## Performance Review: Single CSV
+
+How long does it take to calculate the number of books checked out in each month of 2021?
+
+<br>
+
+```{r}
+#| label: seattle-single-csv-dplyr-timed
+
+open_dataset(sources = "data/seattle-library-checkouts.csv", 
+  format = "csv") |> 
+
+  filter(CheckoutYear == 2021, MaterialType == "BOOK") |>
+  group_by(CheckoutMonth) |>
+  summarise(TotalCheckouts = sum(Checkouts)) |>
+  arrange(desc(CheckoutMonth)) |>
+  collect() |>
+  system.time()
+```
+
+## Performance Review: Partitioned Parquet
+
+How long does it take to calculate the number of books checked out in each month of 2021?
+
+<br>
+
+```{r}
+#| label: seattle-parquet-partitioned-dplyr-timed
+
+open_dataset(sources = "data/seattle-library-checkouts",
+             format = "parquet") |> 
+  filter(CheckoutYear == 2021, MaterialType == "BOOK") |>
+  group_by(CheckoutMonth) |>
+  summarise(TotalCheckouts = sum(Checkouts)) |>
+  arrange(desc(CheckoutMonth)) |>
+  collect() |> 
+  system.time()
+```
+
+## Engineering Data Tips for Improved Storage & Performance
+
+<br>
+
+-   consider "column-oriented" file formats like Parquet
+-   consider partitioning, experiment to get an appropriate partition design 🗂️
+-   watch your schemas 👀
+
+## R for Data Science (2e)
+
+::: columns
+::: {.column width="50%"}
+![](images/r4ds-cover.jpg){.absolute top="100" width="400"}
+:::
+
+::: {.column width="50%"}
+<br>
+
+[Chapter 23: Arrow](https://r4ds.hadley.nz/arrow.html)
+
+<br>
+
+<https://r4ds.hadley.nz/>
+:::
+:::

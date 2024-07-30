@@ -1,0 +1,385 @@
+---
+footer: "[🔗 pos.it/arrow-conf24](https://pos.it/arrow-conf24)"
+logo: "images/logo.png"
+execute:
+  echo: true
+format:
+  revealjs: 
+    theme: default
+engine: knitr
+editor: source
+---
+
+# Data Manipulation---Part 2 {#data-manip-2}
+
+```{r}
+#| label: setup-data-manip-2
+#| message: false
+#| echo: false
+
+library(arrow)
+library(dplyr)
+library(duckdb)
+library(lubridate)
+library(stringr)
+library(tictoc)
+
+nyc_taxi <- open_dataset("data/nyc-taxi/")
+```
+
+## What if a function binding doesn't exist - revisited!
+
+-   Option 1 - find a workaround
+-   Option 2 - user-defined functions (UDFs)
+
+## Why use a UDF?
+
+* If no bindings for a function exist
+* Implement your own custom functions
+* Run in R not Arrow
+
+## How do function bindings usually work?
+
+![](images/udf_normal.png)
+## How do UDFs work?
+
+![](images/udf.png)
+
+
+```{r}
+#| label: difftime-error
+#| error: true
+
+time_diff_minutes <- function(pickup, dropoff){
+  difftime(dropoff, pickup, units = "mins") |>
+      round() |>
+      as.integer()
+}
+
+nyc_taxi |>
+  mutate(
+    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)
+  ) |> 
+  select(pickup_datetime, dropoff_datetime, duration_minutes) |>
+  head() |>
+  collect()
+```
+We get an error as we can't automatically convert the function to arrow.
+
+# User-defined functions (aka UDFs)
+
+-   Define your own functions
+-   Scalar functions - 1 row input and 1 row output
+
+## User-defined functions - definition
+
+```{r}
+#| label: udf-define-1
+register_scalar_function(
+  name = "time_diff_minutes",
+  function(context, pickup, dropoff) {
+    difftime(dropoff, pickup, units = "mins") |>
+      round() |>
+      as.integer()
+  },
+  in_type = schema(
+    pickup = timestamp(unit = "ms"),
+    dropoff = timestamp(unit = "ms")
+  ),
+  out_type = int32(),
+  auto_convert = TRUE
+)
+```
+
+This looks complicated, so let's look at it 1 part at a time!
+
+## User-defined functions - definition
+
+Step 1. Give the function a name
+
+```{r, `code-line-numbers`="2"}
+#| label: udf-define-2
+register_scalar_function(
+  name = "time_diff_minutes",
+  function(context, pickup, dropoff) {
+    difftime(dropoff, pickup, units = "mins") |>
+      round() |>
+      as.integer()
+  },
+  in_type = schema(
+    pickup = timestamp(unit = "ms"),
+    dropoff = timestamp(unit = "ms")
+  ),
+  out_type = int32(),
+  auto_convert = TRUE
+)
+```
+
+## User-defined functions - definition
+
+Step 2. Define the body of the function - first argument *must* be `context`
+
+```{r, `code-line-numbers`="3,4,5,6,7"}
+#| label: udf-define-3
+register_scalar_function(
+  name = "time_diff_minutes",
+  function(context, pickup, dropoff) {
+    difftime(dropoff, pickup, units = "mins") |>
+      round() |>
+      as.integer()
+  },
+  in_type = schema(
+    pickup = timestamp(unit = "ms"),
+    dropoff = timestamp(unit = "ms")
+  ),
+  out_type = int32(),
+  auto_convert = TRUE
+)
+```
+
+## User-defined functions - definition
+
+Step 3. Set the schema of the input arguments
+
+```{r, `code-line-numbers`="8,9,10,11"}
+#| label: udf-define-4
+register_scalar_function(
+  name = "time_diff_minutes",
+  function(context, pickup, dropoff) {
+    difftime(dropoff, pickup, units = "mins") |>
+      round() |>
+      as.integer()
+  },
+  in_type = schema(
+    pickup = timestamp(unit = "ms"),
+    dropoff = timestamp(unit = "ms")
+  ),
+  out_type = int32(),
+  auto_convert = TRUE
+)
+```
+
+## User-defined functions - definition
+
+Step 4. Set the data type of the output
+
+```{r, `code-line-numbers`="12"}
+#| label: udf-define-5
+register_scalar_function(
+  name = "time_diff_minutes",
+  function(context, pickup, dropoff) {
+    difftime(dropoff, pickup, units = "mins") |>
+      round() |>
+      as.integer()
+  },
+  in_type = schema(
+    pickup = timestamp(unit = "ms"),
+    dropoff = timestamp(unit = "ms")
+  ),
+  out_type = int32(),
+  auto_convert = TRUE
+)
+```
+
+## User-defined functions - definition
+
+Step 5. Set `auto_convert = TRUE` if using in a dplyr pipeline
+
+```{r, `code-line-numbers`="13"}
+#| label: udf-define-6
+register_scalar_function(
+  name = "time_diff_minutes",
+  function(context, pickup, dropoff) {
+    difftime(dropoff, pickup, units = "mins") |>
+      round() |>
+      as.integer()
+  },
+  in_type = schema(
+    pickup = timestamp(unit = "ms"),
+    dropoff = timestamp(unit = "ms")
+  ),
+  out_type = int32(),
+  auto_convert = TRUE
+)
+```
+
+## User-defined functions - usage
+
+```{r}
+#| label: udf-use
+nyc_taxi |>
+  mutate(
+    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)
+  ) |>
+  select(pickup_datetime, dropoff_datetime, duration_minutes) |>
+  head() |>
+  collect()
+```
+
+## Your Turn
+
+1.  Write a user-defined function which wraps the `stringr` function `str_replace_na()`, and use it to replace any `NA` values in the `vendor_name` column with the string "No vendor" instead. (Test it on the data from 2019 so you're not pulling everything into memory)
+
+➡️ [Data Manipulation Part II Exercises Page](4_data_manipulation_2-exercises.html)
+
+## Summary
+
+-   You can use UDFs to create your own bindings when they don't exist
+-   UDFs must be scalar (1 row in -\> 1 row out) and stateless (no knowledge of other rows of data)
+-   Calculations done by R not Arrow, so slower than in-built bindings but still pretty fast
+
+# Joins
+
+## Joins
+
+![](images/joins.png)
+
+## Joining a reference table
+
+```{r}
+#| label: ref
+
+vendors <- tibble::tibble(
+  code = c("VTS", "CMT", "DDS"),
+  full_name = c(
+    "Verifone Transportation Systems",
+    "Creative Mobile Technologies",
+    "Digital Dispatch Systems"
+  )
+)
+
+nyc_taxi |>
+  left_join(vendors, by = c("vendor_name" = "code")) |>
+  select(vendor_name, full_name, pickup_datetime) |>
+  head(3) |>
+  collect()
+```
+
+## Traps for the unwary
+
+Question: which are the most common borough-to-borough journeys in the dataset?
+
+```{r}
+#| label: lookup
+
+nyc_taxi_zones <- 
+  read_csv_arrow("data/taxi_zone_lookup.csv") |>
+  select(location_id = LocationID,
+         borough = Borough)
+
+nyc_taxi_zones
+```
+
+## Why didn't this work?
+
+```{r}
+#| label: join-fail
+#| error: true
+
+nyc_taxi |>
+  left_join(nyc_taxi_zones, by = c("pickup_location_id" = "location_id")) |>
+  collect()
+```
+
+## Schema for the `nyc_taxi` Dataset
+
+```{r}
+#| label: get-schema
+schema(nyc_taxi)
+```
+
+## Schema for the `nyc_taxi_zones` Table
+
+```{r}
+#| label: schema-2
+
+nyc_taxi_zones_arrow <- arrow_table(nyc_taxi_zones)
+schema(nyc_taxi_zones_arrow)
+```
+
+-   `pickup_location_id` is int64 in the `nyc_taxi` table
+-   `location_id` is int32 in the `nyc_taxi_zones` table
+
+## Take control of the schema
+
+```{r}
+#| label: zones-schema
+
+nyc_taxi_zones_arrow <- arrow_table(
+  nyc_taxi_zones, 
+  schema = schema(location_id = int64(), borough = utf8())
+)
+```
+
+-   `schema()` takes variable name / types as input
+-   arrow has various "type" functions: `int64()`, `utf8()`, `boolean()`, `date32()` etc
+
+## Take control of the schema
+
+```{r}
+#| label: zones-schema-2
+
+nyc_taxi_zones_arrow <- arrow_table(
+  nyc_taxi_zones, 
+  schema = schema(location_id = int64(), borough = utf8())
+)
+schema(nyc_taxi_zones_arrow)
+```
+
+## Prepare the auxiliary tables
+
+```{r}
+#| label: auxillary
+
+pickup <- nyc_taxi_zones_arrow |>
+  select(pickup_location_id = location_id,
+         pickup_borough = borough)
+
+dropoff <- nyc_taxi_zones_arrow |>
+  select(dropoff_location_id = location_id,
+         dropoff_borough = borough)
+```
+
+-   Join separately for the pickup and dropoff zones
+
+
+## Join and cross-tabulate
+
+```{r}
+#| label: join-crosstab
+
+library(tictoc)
+
+tic()
+borough_counts <- nyc_taxi |> 
+  left_join(pickup) |>
+  left_join(dropoff) |>
+  count(pickup_borough, dropoff_borough) |>
+  arrange(desc(n)) |>
+  collect()
+toc()
+```
+
+<br>
+
+2-3 minutes to join twice and cross-tabulate on non-partition variables, with 1.15 billion rows of data 🙂
+
+## The results
+
+```{r}
+#| label: borough-counts
+
+borough_counts
+```
+
+## Your Turn
+
+1.  How many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? (Hint: you can use `stringr::str_detect()` to help you find pickup zones with the word "Airport" in them)
+
+➡️ [Data Manipulation Part II Exercises Page](4_data_manipulation_2-exercises.html)
+
+## Summary
+
+-   You can join Arrow Tables and Datasets to R data frames and Arrow Tables
+-   The Arrow data type of join keys must always match
+
