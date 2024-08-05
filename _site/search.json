@@ -298,7 +298,7 @@
     "href": "materials/3_data_engineering.html#arrowopen_dataset-with-a-csv",
     "title": "Big Data in R with Arrow",
     "section": "arrow::open_dataset() with a CSV",
-    "text": "arrow::open_dataset() with a CSV\n\nlibrary(arrow)\nlibrary(dplyr)\n\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n               format = \"csv\")\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: null\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
+    "text": "arrow::open_dataset() with a CSV\n\nlibrary(arrow)\nlibrary(dplyr)\n\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n                            format = \"csv\")\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: null\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
   },
   {
     "objectID": "materials/3_data_engineering.html#arrowschema",
@@ -347,7 +347,7 @@
     "href": "materials/3_data_engineering.html#lets-control-the-schema-2",
     "title": "Big Data in R with Arrow",
     "section": "Let’s Control the Schema",
-    "text": "Let’s Control the Schema\nSchema defines column names and types, so we need to skip the first row (skip = 1):\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  skip = 1,\n  schema = schema(\n    UsageClass = utf8(),\n    CheckoutType = utf8(),\n    MaterialType = utf8(),\n    CheckoutYear = int64(),\n    CheckoutMonth = int64(),\n    Checkouts = int64(),\n    Title = utf8(),\n    ISBN = string(), #utf8()\n    Creator = utf8(),\n    Subjects = utf8(),\n    Publisher = utf8(),\n    PublicationYear = utf8()\n  )\n)\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: string\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
+    "text": "Let’s Control the Schema\nSchema defines column names and types, so we need to skip the first row (skip = 1):\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  schema = schema(\n    UsageClass = utf8(),\n    CheckoutType = utf8(),\n    MaterialType = utf8(),\n    CheckoutYear = int64(),\n    CheckoutMonth = int64(),\n    Checkouts = int64(),\n    Title = utf8(),\n    ISBN = string(), #utf8()\n    Creator = utf8(),\n    Subjects = utf8(),\n    Publisher = utf8(),\n    PublicationYear = utf8()\n  ),\n    skip = 1,\n)\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: string\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
   },
   {
     "objectID": "materials/3_data_engineering.html#lets-control-the-schema-3",
@@ -361,7 +361,7 @@
     "href": "materials/3_data_engineering.html#your-turn",
     "title": "Big Data in R with Arrow",
     "section": "Your Turn",
-    "text": "Your Turn\n\nThe first few thousand rows of ISBN are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with open_dataset() and ensure the correct data type for ISBN is &lt;string&gt; instead of the &lt;null&gt; interpreted by Arrow.\nOnce you have a Dataset object with the metadata you are after, count the number of Checkouts by CheckoutYear and arrange the result by CheckoutYear.\n\n➡️ Data Storage Engineering Exercises Page"
+    "text": "Your Turn\n\nThe first few thousand rows of ISBN are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with open_dataset() and ensure the correct data type for ISBN is &lt;string&gt; (or the alias &lt;utf8&gt;) instead of the &lt;null&gt; interpreted by Arrow.\nOnce you have a Dataset object with the metadata you are after, count the number of Checkouts by CheckoutYear and arrange the result by CheckoutYear.\n\n➡️ Data Storage Engineering Exercises Page"
   },
   {
     "objectID": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr",
@@ -375,7 +375,7 @@
     "href": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr-1",
     "title": "Big Data in R with Arrow",
     "section": "9GB CSV file + arrow + dplyr",
-    "text": "9GB CSV file + arrow + dplyr\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 11.581   1.136  11.117 \n\n\n42 million rows – not bad, but could be faster…."
+    "text": "9GB CSV file + arrow + dplyr\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 10.534   1.058  10.253 \n\n\n42 million rows – not bad, but could be faster…."
   },
   {
     "objectID": "materials/3_data_engineering.html#file-format-apache-parquet",
@@ -417,7 +417,7 @@
     "href": "materials/3_data_engineering.html#storage-parquet-vs-csv",
     "title": "Big Data in R with Arrow",
     "section": "Storage: Parquet vs CSV",
-    "text": "Storage: Parquet vs CSV\n\nfile &lt;- list.files(seattle_parquet)\nfile.size(file.path(seattle_parquet, file)) / 10**9\n\n[1] 4.423348\n\n\n\nParquet about half the size of the CSV file on-disk 💾"
+    "text": "Storage: Parquet vs CSV\n\nfile &lt;- list.files(seattle_parquet)\nfile.size(file.path(seattle_parquet, file)) / 10**9\n\n[1] 4.424267\n\n\n\nParquet about half the size of the CSV file on-disk 💾"
   },
   {
     "objectID": "materials/3_data_engineering.html#your-turn-1",
@@ -431,14 +431,14 @@
     "href": "materials/3_data_engineering.html#gb-parquet-file-arrow-dplyr",
     "title": "Big Data in R with Arrow",
     "section": "4.5GB Parquet file + arrow + dplyr",
-    "text": "4.5GB Parquet file + arrow + dplyr\n\nopen_dataset(sources = seattle_parquet, \n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  2.018   0.265   0.595 \n\n\n42 million rows – much better! But could be even faster…."
+    "text": "4.5GB Parquet file + arrow + dplyr\n\nopen_dataset(sources = seattle_parquet, \n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.727   0.416   0.565 \n\n\n42 million rows – much better! But could be even faster…."
   },
   {
     "objectID": "materials/3_data_engineering.html#file-storage-partitioning",
     "href": "materials/3_data_engineering.html#file-storage-partitioning",
     "title": "Big Data in R with Arrow",
     "section": "File Storage:Partitioning",
-    "text": "File Storage:Partitioning\n\n\n\nDividing data into smaller pieces, making it more easily accessible and manageable\n\n\n\n\nalso called multi-files or sometimes shards"
+    "text": "File Storage:Partitioning\n\n\n\nDividing data into smaller pieces, making it more easily accessible and manageable\n\n\n\n\n\nalso called multi-files or sometimes shards"
   },
   {
     "objectID": "materials/3_data_engineering.html#poll-partitioning",
@@ -466,14 +466,14 @@
     "href": "materials/3_data_engineering.html#what-did-we-engineer",
     "title": "Big Data in R with Arrow",
     "section": "What Did We “Engineer”?",
-    "text": "What Did We “Engineer”?\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nsizes &lt;- tibble(\n  files = list.files(seattle_parquet_part, recursive = TRUE),\n  size_GB = file.size(file.path(seattle_parquet_part, files)) / 10**9\n)\n\nsizes\n\n# A tibble: 18 × 2\n   files                            size_GB\n   &lt;chr&gt;                              &lt;dbl&gt;\n 1 CheckoutYear=2005/part-0.parquet   0.114\n 2 CheckoutYear=2006/part-0.parquet   0.172\n 3 CheckoutYear=2007/part-0.parquet   0.186\n 4 CheckoutYear=2008/part-0.parquet   0.204\n 5 CheckoutYear=2009/part-0.parquet   0.224\n 6 CheckoutYear=2010/part-0.parquet   0.233\n 7 CheckoutYear=2011/part-0.parquet   0.250\n 8 CheckoutYear=2012/part-0.parquet   0.261\n 9 CheckoutYear=2013/part-0.parquet   0.282\n10 CheckoutYear=2014/part-0.parquet   0.296\n11 CheckoutYear=2015/part-0.parquet   0.308\n12 CheckoutYear=2016/part-0.parquet   0.315\n13 CheckoutYear=2017/part-0.parquet   0.319\n14 CheckoutYear=2018/part-0.parquet   0.306\n15 CheckoutYear=2019/part-0.parquet   0.302\n16 CheckoutYear=2020/part-0.parquet   0.158\n17 CheckoutYear=2021/part-0.parquet   0.240\n18 CheckoutYear=2022/part-0.parquet   0.252"
+    "text": "What Did We “Engineer”?\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nsizes &lt;- tibble(\n  files = list.files(seattle_parquet_part, recursive = TRUE),\n  size_GB = file.size(file.path(seattle_parquet_part, files)) / 10**9\n)\n\nsizes\n\n# A tibble: 18 × 2\n   files                            size_GB\n   &lt;chr&gt;                              &lt;dbl&gt;\n 1 CheckoutYear=2005/part-0.parquet   0.115\n 2 CheckoutYear=2006/part-0.parquet   0.172\n 3 CheckoutYear=2007/part-0.parquet   0.186\n 4 CheckoutYear=2008/part-0.parquet   0.204\n 5 CheckoutYear=2009/part-0.parquet   0.224\n 6 CheckoutYear=2010/part-0.parquet   0.233\n 7 CheckoutYear=2011/part-0.parquet   0.250\n 8 CheckoutYear=2012/part-0.parquet   0.261\n 9 CheckoutYear=2013/part-0.parquet   0.282\n10 CheckoutYear=2014/part-0.parquet   0.296\n11 CheckoutYear=2015/part-0.parquet   0.308\n12 CheckoutYear=2016/part-0.parquet   0.315\n13 CheckoutYear=2017/part-0.parquet   0.319\n14 CheckoutYear=2018/part-0.parquet   0.306\n15 CheckoutYear=2019/part-0.parquet   0.303\n16 CheckoutYear=2020/part-0.parquet   0.158\n17 CheckoutYear=2021/part-0.parquet   0.240\n18 CheckoutYear=2022/part-0.parquet   0.252"
   },
   {
     "objectID": "materials/3_data_engineering.html#gb-partitioned-parquet-files-arrow-dplyr",
     "href": "materials/3_data_engineering.html#gb-partitioned-parquet-files-arrow-dplyr",
     "title": "Big Data in R with Arrow",
     "section": "4.5GB partitioned Parquet files + arrow + dplyr",
-    "text": "4.5GB partitioned Parquet files + arrow + dplyr\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nopen_dataset(sources = seattle_parquet_part,\n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.640   0.220   0.267 \n\n\n\n42 million rows – not too shabby!"
+    "text": "4.5GB partitioned Parquet files + arrow + dplyr\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nopen_dataset(sources = seattle_parquet_part,\n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.719   0.378   0.368 \n\n\n\n42 million rows – not too shabby!"
   },
   {
     "objectID": "materials/3_data_engineering.html#your-turn-2",
@@ -487,7 +487,7 @@
     "href": "materials/3_data_engineering.html#partitions-na-values",
     "title": "Big Data in R with Arrow",
     "section": "Partitions & NA Values",
-    "text": "Partitions & NA Values\nADD content"
+    "text": "Partitions & NA Values\n\nDefault:\n\ndata &lt;- tibble::tibble(\n  x = 1:6,\n  y = c(rep(\"group1\", 5), NA)\n)\n\npartition_na_default_path &lt;- \"data/na-partition-default\"\n\nwrite_dataset(data, partition_na_default_path,\n              partitioning = \"y\")\n\nlist.files(partition_na_default_path)\n\n[1] \"y=__HIVE_DEFAULT_PARTITION__\" \"y=group1\""
   },
   {
     "objectID": "materials/3_data_engineering.html#partition-design",
@@ -501,14 +501,14 @@
     "href": "materials/3_data_engineering.html#performance-review-single-csv",
     "title": "Big Data in R with Arrow",
     "section": "Performance Review: Single CSV",
-    "text": "Performance Review: Single CSV\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts.csv\", \n  format = \"csv\") |&gt; \n\n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 13.362   1.763  12.438"
+    "text": "Performance Review: Single CSV\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts.csv\", \n  format = \"csv\") |&gt; \n\n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 11.576   1.069  11.139"
   },
   {
     "objectID": "materials/3_data_engineering.html#performance-review-partitioned-parquet",
     "href": "materials/3_data_engineering.html#performance-review-partitioned-parquet",
     "title": "Big Data in R with Arrow",
     "section": "Performance Review: Partitioned Parquet",
-    "text": "Performance Review: Partitioned Parquet\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts\",\n             format = \"parquet\") |&gt; \n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.330   0.039   0.091"
+    "text": "Performance Review: Partitioned Parquet\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts\",\n             format = \"parquet\") |&gt; \n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.225   0.045   0.069"
   },
   {
     "objectID": "materials/3_data_engineering.html#engineering-data-tips-for-improved-storage-performance",
@@ -522,7 +522,7 @@
     "href": "materials/3_data_engineering.html#r-for-data-science-2e",
     "title": "Big Data in R with Arrow",
     "section": "R for Data Science (2e)",
-    "text": "R for Data Science (2e)\n\n\n\n\n\nChapter 23: Arrow\n\nhttps://r4ds.hadley.nz/\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+    "text": "R for Data Science (2e)\n\n\n\n\n\nChapter 23: Arrow\n\nhttps://r4ds.hadley.nz/\n\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
   },
   {
     "objectID": "setup.html",
@@ -1167,5 +1167,12 @@
     "title": "Big Data in R with Arrow",
     "section": "Summary",
     "text": "Summary\n\nYou can join Arrow Tables and Datasets to R data frames and Arrow Tables\nThe Arrow data type of join keys must always match\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#partitions-na-values-1",
+    "href": "materials/3_data_engineering.html#partitions-na-values-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Partitions & NA Values",
+    "text": "Partitions & NA Values\n\nCustom:\n\ndata &lt;- tibble::tibble(\n  x = 1:6,\n  y = c(rep(\"group1\", 5), NA)\n)\n\npartition_na_custom_path &lt;- \"data/na-partition-custom\"\n\nwrite_dataset(data, partition_na_custom_path,\n              partitioning = hive_partition(y = string(), null_fallback = \"no_group\"))\n\nlist.files(partition_na_custom_path)\n\n[1] \"y=group1\"   \"y=no_group\""
   }
 ]
