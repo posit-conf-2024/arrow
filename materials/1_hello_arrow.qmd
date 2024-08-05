@@ -12,13 +12,24 @@ editor: source
 
 # Hello Arrow {#hello-arrow}
 
+
+## Kick-off Q&A
+
+<br>
+
+- What brings you to this workshop?
+- What challenges have you faced related to larger-than-memory data in R?
+- What is one thing you want to learn or achieve from today's workshop?
+- ...?
+
+
 ## Poll: Arrow
 
 <br>
 
 **Have you used or experimented with Arrow before today?**
 
-Vote using emojis on the [#workshop-arrow discord channel](add-url)! <br> 
+Vote using emojis on the #workshop-arrow discord channel! <br> 
 
 1️⃣ Not yet
 
@@ -27,6 +38,7 @@ Vote using emojis on the [#workshop-arrow discord channel](add-url)! <br>
 3️⃣ A little
 
 4️⃣ A lot
+
 
 ## Hello Arrow<br>Demo
 
@@ -71,7 +83,7 @@ unzip(
 ## Posit Workbench 🛠️
 
 -   Join Workbench via URL in the workshop Discord channel
--   You can use you GitHub credentials to log in
+-   You can use your GitHub credentials to log in
 
 <!-- [![](){.absolute left="200" width="600"} -->
 
