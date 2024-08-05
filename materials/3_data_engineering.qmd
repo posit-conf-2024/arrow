@@ -450,42 +450,29 @@ open_dataset(sources = seattle_parquet_part,
 
 ## Partitions & NA Values
 
-<br>
-
 Default:
 
-
 ```{r}
-data <- tibble::tibble(
-  x = 1:6,
-  y = c(rep("group1", 5), NA)
-)
-
 partition_na_default_path <- "data/na-partition-default"
 
-write_dataset(data, partition_na_default_path,
-              partitioning = "y")
+write_dataset(starwars,
+              partition_na_default_path,
+              partitioning = "hair_color")
 
 list.files(partition_na_default_path)
 ```
 
 ## Partitions & NA Values
 
-<br>
-
 Custom:
 
-
 ```{r}
-data <- tibble::tibble(
-  x = 1:6,
-  y = c(rep("group1", 5), NA)
-)
-
 partition_na_custom_path <- "data/na-partition-custom"
 
-write_dataset(data, partition_na_custom_path,
-              partitioning = hive_partition(y = string(), null_fallback = "no_group"))
+write_dataset(starwars,
+              partition_na_custom_path,
+              partitioning = hive_partition(hair_color = string(),
+                                            null_fallback = "no_color"))
 
 list.files(partition_na_custom_path)
 ```

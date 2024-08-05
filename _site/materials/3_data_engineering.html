@@ -709,7 +709,7 @@ PublicationYear: string</code></pre>
 <span id="cb16-6"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 10.534   1.058  10.253 </code></pre>
+ 10.688   1.099  10.451 </code></pre>
 </div>
 </div>
 <p>42 million rows – not bad, but could be faster….</p>
@@ -794,7 +794,7 @@ PublicationYear: string</code></pre>
 <span id="cb21-7"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  1.727   0.416   0.565 </code></pre>
+  1.771   0.431   0.568 </code></pre>
 </div>
 </div>
 <p>42 million rows – much better! But could be <em>even</em> faster….</p>
@@ -922,7 +922,7 @@ PublicationYear: string</code></pre>
 <span id="cb26-9"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  1.719   0.378   0.368 </code></pre>
+  1.742   0.385   0.366 </code></pre>
 </div>
 </div>
 <p><br></p>
@@ -951,43 +951,50 @@ PublicationYear: string</code></pre>
 </section>
 <section id="partitions-na-values" class="slide level2">
 <h2>Partitions &amp; NA Values</h2>
-<p><br></p>
 <p>Default:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a></a>data <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
-<span id="cb28-2"><a></a>  <span class="at">x =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>,</span>
-<span id="cb28-3"><a></a>  <span class="at">y =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"group1"</span>, <span class="dv">5</span>), <span class="cn">NA</span>)</span>
-<span id="cb28-4"><a></a>)</span>
-<span id="cb28-5"><a></a></span>
-<span id="cb28-6"><a></a>partition_na_default_path <span class="ot">&lt;-</span> <span class="st">"data/na-partition-default"</span></span>
-<span id="cb28-7"><a></a></span>
-<span id="cb28-8"><a></a><span class="fu">write_dataset</span>(data, partition_na_default_path,</span>
-<span id="cb28-9"><a></a>              <span class="at">partitioning =</span> <span class="st">"y"</span>)</span>
-<span id="cb28-10"><a></a></span>
-<span id="cb28-11"><a></a><span class="fu">list.files</span>(partition_na_default_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a></a>partition_na_default_path <span class="ot">&lt;-</span> <span class="st">"data/na-partition-default"</span></span>
+<span id="cb28-2"><a></a></span>
+<span id="cb28-3"><a></a><span class="fu">write_dataset</span>(starwars,</span>
+<span id="cb28-4"><a></a>              partition_na_default_path,</span>
+<span id="cb28-5"><a></a>              <span class="at">partitioning =</span> <span class="st">"hair_color"</span>)</span>
+<span id="cb28-6"><a></a></span>
+<span id="cb28-7"><a></a><span class="fu">list.files</span>(partition_na_default_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "y=__HIVE_DEFAULT_PARTITION__" "y=group1"                    </code></pre>
+<pre><code> [1] "hair_color=__HIVE_DEFAULT_PARTITION__"
+ [2] "hair_color=auburn"                    
+ [3] "hair_color=auburn%2C%20grey"          
+ [4] "hair_color=auburn%2C%20white"         
+ [5] "hair_color=black"                     
+ [6] "hair_color=blond"                     
+ [7] "hair_color=blonde"                    
+ [8] "hair_color=brown"                     
+ [9] "hair_color=brown%2C%20grey"           
+[10] "hair_color=grey"                      
+[11] "hair_color=none"                      
+[12] "hair_color=white"                     </code></pre>
 </div>
 </div>
 </section>
 <section id="partitions-na-values-1" class="slide level2">
 <h2>Partitions &amp; NA Values</h2>
-<p><br></p>
 <p>Custom:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a></a>data <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
-<span id="cb30-2"><a></a>  <span class="at">x =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>,</span>
-<span id="cb30-3"><a></a>  <span class="at">y =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"group1"</span>, <span class="dv">5</span>), <span class="cn">NA</span>)</span>
-<span id="cb30-4"><a></a>)</span>
-<span id="cb30-5"><a></a></span>
-<span id="cb30-6"><a></a>partition_na_custom_path <span class="ot">&lt;-</span> <span class="st">"data/na-partition-custom"</span></span>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a></a>partition_na_custom_path <span class="ot">&lt;-</span> <span class="st">"data/na-partition-custom"</span></span>
+<span id="cb30-2"><a></a></span>
+<span id="cb30-3"><a></a><span class="fu">write_dataset</span>(starwars,</span>
+<span id="cb30-4"><a></a>              partition_na_custom_path,</span>
+<span id="cb30-5"><a></a>              <span class="at">partitioning =</span> <span class="fu">hive_partition</span>(<span class="at">hair_color =</span> <span class="fu">string</span>(),</span>
+<span id="cb30-6"><a></a>                                            <span class="at">null_fallback =</span> <span class="st">"no_color"</span>))</span>
 <span id="cb30-7"><a></a></span>
-<span id="cb30-8"><a></a><span class="fu">write_dataset</span>(data, partition_na_custom_path,</span>
-<span id="cb30-9"><a></a>              <span class="at">partitioning =</span> <span class="fu">hive_partition</span>(<span class="at">y =</span> <span class="fu">string</span>(), <span class="at">null_fallback =</span> <span class="st">"no_group"</span>))</span>
-<span id="cb30-10"><a></a></span>
-<span id="cb30-11"><a></a><span class="fu">list.files</span>(partition_na_custom_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb30-8"><a></a><span class="fu">list.files</span>(partition_na_custom_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "y=group1"   "y=no_group"</code></pre>
+<pre><code> [1] "hair_color=auburn"            "hair_color=auburn%2C%20grey" 
+ [3] "hair_color=auburn%2C%20white" "hair_color=black"            
+ [5] "hair_color=blond"             "hair_color=blonde"           
+ [7] "hair_color=brown"             "hair_color=brown%2C%20grey"  
+ [9] "hair_color=grey"              "hair_color=no_color"         
+[11] "hair_color=none"              "hair_color=white"            </code></pre>
 </div>
 </div>
 </section>
@@ -1007,7 +1014,7 @@ PublicationYear: string</code></pre>
 <span id="cb32-9"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 11.576   1.069  11.139 </code></pre>
+ 11.718   1.106  11.250 </code></pre>
 </div>
 </div>
 </section>
@@ -1026,7 +1033,7 @@ PublicationYear: string</code></pre>
 <span id="cb34-8"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.225   0.045   0.069 </code></pre>
+  0.224   0.040   0.068 </code></pre>
 </div>
 </div>
 </section>

@@ -375,7 +375,7 @@
     "href": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr-1",
     "title": "Big Data in R with Arrow",
     "section": "9GB CSV file + arrow + dplyr",
-    "text": "9GB CSV file + arrow + dplyr\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 10.534   1.058  10.253 \n\n\n42 million rows – not bad, but could be faster…."
+    "text": "9GB CSV file + arrow + dplyr\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 10.688   1.099  10.451 \n\n\n42 million rows – not bad, but could be faster…."
   },
   {
     "objectID": "materials/3_data_engineering.html#file-format-apache-parquet",
@@ -431,7 +431,7 @@
     "href": "materials/3_data_engineering.html#gb-parquet-file-arrow-dplyr",
     "title": "Big Data in R with Arrow",
     "section": "4.5GB Parquet file + arrow + dplyr",
-    "text": "4.5GB Parquet file + arrow + dplyr\n\nopen_dataset(sources = seattle_parquet, \n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.727   0.416   0.565 \n\n\n42 million rows – much better! But could be even faster…."
+    "text": "4.5GB Parquet file + arrow + dplyr\n\nopen_dataset(sources = seattle_parquet, \n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.771   0.431   0.568 \n\n\n42 million rows – much better! But could be even faster…."
   },
   {
     "objectID": "materials/3_data_engineering.html#file-storage-partitioning",
@@ -473,7 +473,7 @@
     "href": "materials/3_data_engineering.html#gb-partitioned-parquet-files-arrow-dplyr",
     "title": "Big Data in R with Arrow",
     "section": "4.5GB partitioned Parquet files + arrow + dplyr",
-    "text": "4.5GB partitioned Parquet files + arrow + dplyr\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nopen_dataset(sources = seattle_parquet_part,\n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.719   0.378   0.368 \n\n\n\n42 million rows – not too shabby!"
+    "text": "4.5GB partitioned Parquet files + arrow + dplyr\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nopen_dataset(sources = seattle_parquet_part,\n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.742   0.385   0.366 \n\n\n\n42 million rows – not too shabby!"
   },
   {
     "objectID": "materials/3_data_engineering.html#your-turn-2",
@@ -487,7 +487,7 @@
     "href": "materials/3_data_engineering.html#partitions-na-values",
     "title": "Big Data in R with Arrow",
     "section": "Partitions & NA Values",
-    "text": "Partitions & NA Values\n\nDefault:\n\ndata &lt;- tibble::tibble(\n  x = 1:6,\n  y = c(rep(\"group1\", 5), NA)\n)\n\npartition_na_default_path &lt;- \"data/na-partition-default\"\n\nwrite_dataset(data, partition_na_default_path,\n              partitioning = \"y\")\n\nlist.files(partition_na_default_path)\n\n[1] \"y=__HIVE_DEFAULT_PARTITION__\" \"y=group1\""
+    "text": "Partitions & NA Values\nDefault:\n\npartition_na_default_path &lt;- \"data/na-partition-default\"\n\nwrite_dataset(starwars,\n              partition_na_default_path,\n              partitioning = \"hair_color\")\n\nlist.files(partition_na_default_path)\n\n [1] \"hair_color=__HIVE_DEFAULT_PARTITION__\"\n [2] \"hair_color=auburn\"                    \n [3] \"hair_color=auburn%2C%20grey\"          \n [4] \"hair_color=auburn%2C%20white\"         \n [5] \"hair_color=black\"                     \n [6] \"hair_color=blond\"                     \n [7] \"hair_color=blonde\"                    \n [8] \"hair_color=brown\"                     \n [9] \"hair_color=brown%2C%20grey\"           \n[10] \"hair_color=grey\"                      \n[11] \"hair_color=none\"                      \n[12] \"hair_color=white\""
   },
   {
     "objectID": "materials/3_data_engineering.html#partition-design",
@@ -501,14 +501,14 @@
     "href": "materials/3_data_engineering.html#performance-review-single-csv",
     "title": "Big Data in R with Arrow",
     "section": "Performance Review: Single CSV",
-    "text": "Performance Review: Single CSV\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts.csv\", \n  format = \"csv\") |&gt; \n\n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 11.576   1.069  11.139"
+    "text": "Performance Review: Single CSV\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts.csv\", \n  format = \"csv\") |&gt; \n\n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 11.718   1.106  11.250"
   },
   {
     "objectID": "materials/3_data_engineering.html#performance-review-partitioned-parquet",
     "href": "materials/3_data_engineering.html#performance-review-partitioned-parquet",
     "title": "Big Data in R with Arrow",
     "section": "Performance Review: Partitioned Parquet",
-    "text": "Performance Review: Partitioned Parquet\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts\",\n             format = \"parquet\") |&gt; \n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.225   0.045   0.069"
+    "text": "Performance Review: Partitioned Parquet\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts\",\n             format = \"parquet\") |&gt; \n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.224   0.040   0.068"
   },
   {
     "objectID": "materials/3_data_engineering.html#engineering-data-tips-for-improved-storage-performance",
@@ -1173,6 +1173,6 @@
     "href": "materials/3_data_engineering.html#partitions-na-values-1",
     "title": "Big Data in R with Arrow",
     "section": "Partitions & NA Values",
-    "text": "Partitions & NA Values\n\nCustom:\n\ndata &lt;- tibble::tibble(\n  x = 1:6,\n  y = c(rep(\"group1\", 5), NA)\n)\n\npartition_na_custom_path &lt;- \"data/na-partition-custom\"\n\nwrite_dataset(data, partition_na_custom_path,\n              partitioning = hive_partition(y = string(), null_fallback = \"no_group\"))\n\nlist.files(partition_na_custom_path)\n\n[1] \"y=group1\"   \"y=no_group\""
+    "text": "Partitions & NA Values\nCustom:\n\npartition_na_custom_path &lt;- \"data/na-partition-custom\"\n\nwrite_dataset(starwars,\n              partition_na_custom_path,\n              partitioning = hive_partition(hair_color = string(),\n                                            null_fallback = \"no_color\"))\n\nlist.files(partition_na_custom_path)\n\n [1] \"hair_color=auburn\"            \"hair_color=auburn%2C%20grey\" \n [3] \"hair_color=auburn%2C%20white\" \"hair_color=black\"            \n [5] \"hair_color=blond\"             \"hair_color=blonde\"           \n [7] \"hair_color=brown\"             \"hair_color=brown%2C%20grey\"  \n [9] \"hair_color=grey\"              \"hair_color=no_color\"         \n[11] \"hair_color=none\"              \"hair_color=white\""
   }
 ]
