@@ -1,5 +1,635 @@
 [
   {
+    "objectID": "setup.html",
+    "href": "setup.html",
+    "title": "Packages & Data",
+    "section": "",
+    "text": "Welcome to the Big Data in R with Arrow workshop. On this page you will find information about the software, packages and data we will be using during the 1-day workshop.\nWe will be using Posit Workbench to learn together. Workbench will be setup with all the below software and data—all participants need to bring is a laptop that can connect to wifi! If you would prefer to run code locally on your own laptop on the day, or if you want to know how to get set-up locally, you can use the below instructions to install the software & packages and download the data."
+  },
+  {
+    "objectID": "setup.html#larger-than-memory-data-option",
+    "href": "setup.html#larger-than-memory-data-option",
+    "title": "Packages & Data",
+    "section": "Larger-Than-Memory Data Option",
+    "text": "Larger-Than-Memory Data Option\n\n1. NYC Taxi Data\nThis is the main dataset we will use on the day. It’s pretty hefty—40 GB in total—and there are a couple of options for how to acquire it, depending on your internet connection speed.\n\nOption 1—the simplest option—for those with a good internet connection and happy to let things run\nIf you have a solid internet connection, and especially if you’re in the US/Canada, this option is the simplest. You can use arrow itself to download the data. Note that there are no progress bars displayed during download, and so your session will appear to hang, but you can check progress by inspecting the contents of the download directory. When we tested this with Steph’s laptop and a fast internet connection, it took 67 minutes, though results will likely vary widely.\nThis method requires the arrow R package to have been built with S3 support enabled. This is on by default for most MacOS and Windows users, but if you’re on Linux, take a look at the instructions here.\nAfter installing arrow, run the following code:\n\nlibrary(arrow)\nlibrary(dplyr)\n\ndata_path &lt;- \"data/nyc-taxi\" # Or set your own preferred path\n\nopen_dataset(\"s3://voltrondata-labs-datasets/nyc-taxi\") |&gt;\n    filter(year %in% 2012:2021) |&gt; \n    write_dataset(data_path, partitioning = c(\"year\", \"month\"))\n\nOnce this has completed, you can check everything has downloaded correctly by calling:\n\nopen_dataset(data_path) |&gt;\n    nrow()\n\nIt might take a moment to run (the data has over a billion rows!), but you should expect to see:\n[1] 1150352666\nIf you get an error message, your download may have been interrupted at some point. The error message will name the file which could not be read. Manually delete this file and run the nrow() code snippet again until you successfully load the remaining data. You can then download any missing files individually using option 2.\n\n\nOption 2—one file at a time via https\nIf you have a slower internet connection or are further away from the data S3 bucket location, it’s probably going to be simpler to download the data file-by-file. Or, if you had any interruptions to your download process in the previous step, you can either try instead with this method, or delete the files which weren’t downloaded properly, and use this method to just download the files you need.\nWe’ve created a script for you which downloads the data one file at a time via https. The script also checks for previously downloaded data, so if you encounter problems downloading any files, just delete the partially downloaded file and run again—the script will only download files which are missing.\n\ndownload_via_https &lt;- function(data_dir, years = 2012:2021){\n\n    # Set this option as we'll be downloading large files and R has a default\n    # timeout of 60 seconds, so we've updated this to 30 mins\n    options(timeout = 1800)\n    \n    # The S3 bucket where the data is stored\n    bucket &lt;- \"https://voltrondata-labs-datasets.s3.us-east-2.amazonaws.com\"\n    \n    # Collect any errors raised during the download process\n    problems &lt;- c()\n    \n    # Download the data from S3 - loops through the data files, downloading 1 file at a time\n    for (year in years) {\n      \n      # We only have 2 months for 2022 data\n      if(year ==2022){\n        months = 1:2\n      } else {\n        months = 1:12\n      }\n      \n      for (month in months) {\n        \n        # Work out where we're going to be saving the data\n        partition_dir &lt;- paste0(\"year=\", year, \"/month=\", month)\n        dest_dir &lt;- file.path(data_dir, partition_dir)\n        dest_file_path &lt;- file.path(dest_dir, \"part-0.parquet\")\n        \n        # If the file doesn't exist\n        if (!file.exists(dest_file_path)) {\n          \n          # Create the partition to store the data in\n          if(!dir.exists(dest_dir)){\n            dir.create(dest_dir, recursive = TRUE)\n          }\n           \n          # Work out where we are going to be retrieving the data from\n          source_path &lt;- file.path(bucket, \"nyc-taxi\", partition_dir, \"part-0.parquet\")\n          \n          # Download the data - save any error messages that occur\n          tryCatch(\n            download.file(source_path, dest_file_path, mode = \"wb\"),\n            error = function(e){\n              problems &lt;- c(problems, e$message)\n            }\n          )\n        }\n      }\n    }\n    \n    print(\"Downloads complete\")\n    \n    if(length(problems) &gt; 0){\n      warning(call. = FALSE, \"The following errors occurred during download:\\n\", paste(problems, collapse =  \"\\n\"))\n    }\n}\n\n\ndata_path &lt;- \"data/nyc-taxi\" # Or set your own preferred path\n\ndownload_via_https(data_path)\n\nOnce this has completed, you can check everything has downloaded correctly by calling:\n\nopen_dataset(data_path) |&gt;\n    nrow()\n\nIt might take a moment to run (the data has over a billion rows), but you should expect to see:\n[1] 1150352666\nIf you get an error message, your download may have been interrupted at some point. The error message will name the file which could not be read. Manually delete this file and run the nrow() code snippet again until you successfully load the data. You can then download any missing files by re-running download_via_https(data_path).\n\n\n\n2. Seattle Checkouts by Title Data\nThis is the data we use to explore some data storage and engineering options. It’s a good sized, single CSV file—9GB on-disk in total, which can be downloaded from the an AWS S3 bucket via https:\n\noptions(timeout = 1800)\ndownload.file(\n  url = \"https://r4ds.s3.us-west-2.amazonaws.com/seattle-library-checkouts.csv\",\n  destfile = \"data/seattle-library-checkouts.csv\"\n)"
+  },
+  {
+    "objectID": "setup.html#tiny-data-option",
+    "href": "setup.html#tiny-data-option",
+    "title": "Packages & Data",
+    "section": "Tiny Data Option",
+    "text": "Tiny Data Option\nIf you don’t have time or disk space to download the larger-than-memory datasets (and still have disk space do the exercises), you can run the code and exercises in the course with “tiny” versions of these data. Although the focus in this course is working with larger-than-memory data, you can still learn about the concepts and workflows with smaller data—although note you may not see the same performance improvements that you would get when working with larger data.\n\n1. Tiny NYC Taxi Data\nWe’ve created a “tiny” NYC Taxi dataset which contains only 1 in 1000 rows from the original dataset. So instead of working with 1.15 billion rows of data and about 40GB of files, the tiny taxi dataset is 1.15 million rows and about 50MB of files. You can download the tiny NYC Taxi data directly from this repo via https:\n\noptions(timeout = 1800)\ndownload.file(\n  url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/nyc-taxi-tiny.zip\",\n  destfile = \"data/nyc-taxi-tiny.zip\"\n)\n\n# Extract the partitioned parquet files from the zip folder:\nunzip(\n  zipfile = \"data/nyc-taxi-tiny.zip\", \n  exdir = \"data/\"\n)\n\n\n\n2. Tiny Seattle Checkouts by Title Data\nWe’ve created a “tiny” Seattle Checkouts by Title dataset which contains only 1 in 100 rows from the original dataset. So instead of working with ~41 million rows of data in a 9GB file, the tiny Seattle checkouts dataset is ~410 thousand rows and in an 90MB file. You can download the tiny Seattle Checkouts by Title data directly from this repo via https:\n\noptions(timeout = 1800)\ndownload.file(\n  url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/seattle-library-checkouts-tiny.csv\",\n  destfile = \"data/seattle-library-checkouts-tiny.csv\"\n)"
+  },
+  {
+    "objectID": "setup.html#both-data-options-everyone",
+    "href": "setup.html#both-data-options-everyone",
+    "title": "Packages & Data",
+    "section": "Both Data Options / Everyone",
+    "text": "Both Data Options / Everyone\n\n3. Taxi Zone Lookup CSV Table & Taxi Zone Shapefile\nYou can download the two NYC Taxi trip ancillary data files directly from this repo via https:\n\noptions(timeout = 1800)\ndownload.file(\n  url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/taxi_zone_lookup.csv\",\n  destfile = \"data/taxi_zone_lookup.csv\"\n)\n\ndownload.file(\n  url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/taxi_zones.zip\",\n  destfile = \"data/taxi_zones.zip\"\n)\n\n# Extract the spatial files from the zip folder:\nunzip(\n  zipfile = \"data/taxi_zones.zip\", \n  exdir = \"data/taxi_zones\"\n)"
+  },
+  {
+    "objectID": "materials/7_continue_learning.html#docs",
+    "href": "materials/7_continue_learning.html#docs",
+    "title": "Big Data in R with Arrow",
+    "section": "Docs",
+    "text": "Docs\n\nhttps://arrow.apache.org/docs/r/"
+  },
+  {
+    "objectID": "materials/7_continue_learning.html#cookbook",
+    "href": "materials/7_continue_learning.html#cookbook",
+    "title": "Big Data in R with Arrow",
+    "section": "Cookbook",
+    "text": "Cookbook\nhttps://arrow.apache.org/cookbook/r/"
+  },
+  {
+    "objectID": "materials/7_continue_learning.html#cheatsheet",
+    "href": "materials/7_continue_learning.html#cheatsheet",
+    "title": "Big Data in R with Arrow",
+    "section": "Cheatsheet",
+    "text": "Cheatsheet\n\nhttps://github.com/apache/arrow/blob/master/r/cheatsheet/arrow-cheatsheet.pdf"
+  },
+  {
+    "objectID": "materials/7_continue_learning.html#awesome-arrow",
+    "href": "materials/7_continue_learning.html#awesome-arrow",
+    "title": "Big Data in R with Arrow",
+    "section": "Awesome Arrow",
+    "text": "Awesome Arrow\nhttps://github.com/thisisnic/awesome-arrow-r"
+  },
+  {
+    "objectID": "materials/7_continue_learning.html#github-issues",
+    "href": "materials/7_continue_learning.html#github-issues",
+    "title": "Big Data in R with Arrow",
+    "section": "GitHub Issues",
+    "text": "GitHub Issues\nhttps://github.com/apache/arrow/issues"
+  },
+  {
+    "objectID": "materials/7_continue_learning.html#community",
+    "href": "materials/7_continue_learning.html#community",
+    "title": "Big Data in R with Arrow",
+    "section": "Community",
+    "text": "Community\nhttps://arrow.apache.org/community/\n\n\nalso Stack Overflow, Posit Community\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#arrow",
+    "href": "materials/5_arrow_single_file.html#arrow",
+    "title": "Big Data in R with Arrow",
+    "section": "arrow 📦",
+    "text": "arrow 📦"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#arrow-single-files",
+    "href": "materials/5_arrow_single_file.html#arrow-single-files",
+    "title": "Big Data in R with Arrow",
+    "section": "Arrow & Single Files",
+    "text": "Arrow & Single Files\n\nlibrary(arrow)\n\nread_parquet()\nread_csv_arrow()\nread_feather()\nread_json_arrow()\n\nValue: tibble (the default), or an Arrow Table if as_data_frame = FALSE — both in-memory"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#your-turn",
+    "href": "materials/5_arrow_single_file.html#your-turn",
+    "title": "Big Data in R with Arrow",
+    "section": "Your Turn",
+    "text": "Your Turn\n\nRead in a single NYC Taxi parquet file using read_parquet() as an Arrow Table\nConvert your Arrow Table object to a data.frame or a tibble"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#read-a-parquet-file-tibble",
+    "href": "materials/5_arrow_single_file.html#read-a-parquet-file-tibble",
+    "title": "Big Data in R with Arrow",
+    "section": "Read a Parquet File (tibble)",
+    "text": "Read a Parquet File (tibble)\n\nlibrary(arrow)\n\nparquet_file &lt;- \"data/nyc-taxi/year=2019/month=9/part-0.parquet\"\n\ntaxi_df &lt;- read_parquet(file = parquet_file)\ntaxi_df\n\n# A tibble: 6,567,396 × 22\n   vendor_name pickup_datetime     dropoff_datetime    passenger_count\n   &lt;chr&gt;       &lt;dttm&gt;              &lt;dttm&gt;                        &lt;int&gt;\n 1 VTS         2019-09-01 06:14:09 2019-09-01 06:31:52               2\n 2 VTS         2019-09-01 06:36:17 2019-09-01 07:12:44               1\n 3 VTS         2019-09-01 06:29:19 2019-09-01 06:54:13               1\n 4 CMT         2019-09-01 06:33:09 2019-09-01 06:52:14               2\n 5 VTS         2019-09-01 06:57:43 2019-09-01 07:26:21               1\n 6 CMT         2019-09-01 06:59:16 2019-09-01 07:28:12               1\n 7 CMT         2019-09-01 06:20:06 2019-09-01 06:52:19               1\n 8 CMT         2019-09-01 06:27:54 2019-09-01 06:32:56               0\n 9 CMT         2019-09-01 06:35:08 2019-09-01 06:55:51               0\n10 CMT         2019-09-01 06:19:37 2019-09-01 06:30:52               1\n# ℹ 6,567,386 more rows\n# ℹ 18 more variables: trip_distance &lt;dbl&gt;, pickup_longitude &lt;dbl&gt;,\n#   pickup_latitude &lt;dbl&gt;, rate_code &lt;chr&gt;, store_and_fwd &lt;chr&gt;,\n#   dropoff_longitude &lt;dbl&gt;, dropoff_latitude &lt;dbl&gt;, payment_type &lt;chr&gt;,\n#   fare_amount &lt;dbl&gt;, extra &lt;dbl&gt;, mta_tax &lt;dbl&gt;, tip_amount &lt;dbl&gt;,\n#   tolls_amount &lt;dbl&gt;, total_amount &lt;dbl&gt;, improvement_surcharge &lt;dbl&gt;,\n#   congestion_surcharge &lt;dbl&gt;, pickup_location_id &lt;int&gt;, …"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#read-a-parquet-file-table",
+    "href": "materials/5_arrow_single_file.html#read-a-parquet-file-table",
+    "title": "Big Data in R with Arrow",
+    "section": "Read a Parquet File (Table)",
+    "text": "Read a Parquet File (Table)\n\ntaxi_table &lt;- read_parquet(file = parquet_file, as_data_frame = FALSE)\ntaxi_table\n\nTable\n6567396 rows x 22 columns\n$vendor_name &lt;string&gt;\n$pickup_datetime &lt;timestamp[ms]&gt;\n$dropoff_datetime &lt;timestamp[ms]&gt;\n$passenger_count &lt;int64&gt;\n$trip_distance &lt;double&gt;\n$pickup_longitude &lt;double&gt;\n$pickup_latitude &lt;double&gt;\n$rate_code &lt;string&gt;\n$store_and_fwd &lt;string&gt;\n$dropoff_longitude &lt;double&gt;\n$dropoff_latitude &lt;double&gt;\n$payment_type &lt;string&gt;\n$fare_amount &lt;double&gt;\n$extra &lt;double&gt;\n$mta_tax &lt;double&gt;\n$tip_amount &lt;double&gt;\n$tolls_amount &lt;double&gt;\n$total_amount &lt;double&gt;\n$improvement_surcharge &lt;double&gt;\n$congestion_surcharge &lt;double&gt;\n...\n2 more columns\nUse `schema()` to see entire schema"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#tibble---table---data.frame",
+    "href": "materials/5_arrow_single_file.html#tibble---table---data.frame",
+    "title": "Big Data in R with Arrow",
+    "section": "tibble <-> Table <-> data.frame",
+    "text": "tibble &lt;-&gt; Table &lt;-&gt; data.frame\n\nlibrary(dplyr)\n\n#change a df to a table\narrow_table(taxi_df)\n\n#change a table to a tibble\ntaxi_table |&gt; collect()\nas_tibble(taxi_table)\n\n#change a table to a data.frame\nas.data.frame(taxi_table)\n\n\n\ndata.frame & tibble are R objects in-memory\nTable is an Arrow object in-memory"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#data-frames",
+    "href": "materials/5_arrow_single_file.html#data-frames",
+    "title": "Big Data in R with Arrow",
+    "section": "Data frames",
+    "text": "Data frames"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#arrow-tables",
+    "href": "materials/5_arrow_single_file.html#arrow-tables",
+    "title": "Big Data in R with Arrow",
+    "section": "Arrow Tables",
+    "text": "Arrow Tables\n\n\nArrow Tables are collections of chunked arrays"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#table-dataset-a-dplyr-pipeline",
+    "href": "materials/5_arrow_single_file.html#table-dataset-a-dplyr-pipeline",
+    "title": "Big Data in R with Arrow",
+    "section": "Table | Dataset: A dplyr pipeline",
+    "text": "Table | Dataset: A dplyr pipeline\n\nparquet_file |&gt;\n  read_parquet(as_data_frame = FALSE) |&gt;\n  group_by(vendor_name) |&gt;\n  summarise(all_trips = n(),\n            shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect()\n\n# A tibble: 3 × 4\n  vendor_name all_trips shared_trips pct_shared\n  &lt;chr&gt;           &lt;int&gt;        &lt;int&gt;      &lt;dbl&gt;\n1 VTS           4238808      1339478       31.6\n2 CMT           2294473       470344       20.5\n3 &lt;NA&gt;            34115            0        0  \n\n\n\nFunctions available in Arrow dplyr queries: https://arrow.apache.org/docs/r/reference/acero.html\n\nAll the same capabilities as you practiced with Arrow Dataset"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#arrow-for-efficient-in-memory-processing",
+    "href": "materials/5_arrow_single_file.html#arrow-for-efficient-in-memory-processing",
+    "title": "Big Data in R with Arrow",
+    "section": "Arrow for Efficient In-Memory Processing",
+    "text": "Arrow for Efficient In-Memory Processing\n\nparquet_file |&gt;\n  read_parquet() |&gt;\n  nrow()\n\n[1] 6567396\n\n\n\n\nparquet_file |&gt;\n  read_parquet() |&gt;\n  group_by(vendor_name) |&gt;\n  summarise(all_trips = n(),\n            shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  2.214   0.575   0.814"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#arrow-for-efficient-in-memory-processing-1",
+    "href": "materials/5_arrow_single_file.html#arrow-for-efficient-in-memory-processing-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Arrow for Efficient In-Memory Processing",
+    "text": "Arrow for Efficient In-Memory Processing\n\nparquet_file |&gt;\n  read_parquet(as_data_frame = FALSE) |&gt;\n  nrow()\n\n[1] 6567396\n\n\n\n\nparquet_file |&gt;\n  read_parquet(as_data_frame = FALSE) |&gt;\n  group_by(vendor_name) |&gt;\n  summarise(all_trips = n(),\n            shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.995   0.343   0.366"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#read-a-parquet-file-selectively",
+    "href": "materials/5_arrow_single_file.html#read-a-parquet-file-selectively",
+    "title": "Big Data in R with Arrow",
+    "section": "Read a Parquet File Selectively",
+    "text": "Read a Parquet File Selectively\n\nparquet_file |&gt;\n  read_parquet(\n    col_select = c(\"vendor_name\", \"passenger_count\"),\n    as_data_frame = FALSE\n  )\n\nTable\n6567396 rows x 2 columns\n$vendor_name &lt;string&gt;\n$passenger_count &lt;int64&gt;"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#selective-reads-are-faster",
+    "href": "materials/5_arrow_single_file.html#selective-reads-are-faster",
+    "title": "Big Data in R with Arrow",
+    "section": "Selective Reads Are Faster",
+    "text": "Selective Reads Are Faster\n\nparquet_file |&gt;\n  read_parquet(\n    col_select = c(\"vendor_name\", \"passenger_count\"),\n    as_data_frame = FALSE\n  ) |&gt; \n  group_by(vendor_name) |&gt;\n  summarise(all_trips = n(),\n            shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  0.323   0.088   0.234 \n\n\n\nNotes: row-based format readers often allow you to specify which columns to read in but the entire row must be read in and the unwanted columns discarded. Parquet’s columnar format allows you to read in only the columns you need, which is faster when you only need a subset of the data."
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#arrow-table-or-dataset",
+    "href": "materials/5_arrow_single_file.html#arrow-table-or-dataset",
+    "title": "Big Data in R with Arrow",
+    "section": "Arrow Table or Dataset?",
+    "text": "Arrow Table or Dataset?\n\n\nhttps://francoismichonneau.net/2022/10/import-big-csv/"
+  },
+  {
+    "objectID": "materials/5_arrow_single_file.html#arrow-for-improving-those-sluggish-worklows",
+    "href": "materials/5_arrow_single_file.html#arrow-for-improving-those-sluggish-worklows",
+    "title": "Big Data in R with Arrow",
+    "section": "Arrow for Improving Those Sluggish Worklows",
+    "text": "Arrow for Improving Those Sluggish Worklows\n\na “drop-in” for many dplyr workflows (Arrow Table or Dataset)\nworks when your tabular data get too big for your RAM (Arrow Dataset)\nprovides tools for re-engineering data storage for better performance (arrow::write_dataset())\n\n\nLot’s of ways to speed up sluggish workflows e.g. writing more performant tidyverse code, use other data frame libraries like data.table or polars, use duckDB or other databases, Spark + splarklyr … However, Arrow offers some attractive features for tackling this challenge, especially for dplyr users.\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#what-if-a-function-binding-doesnt-exist---revisited",
+    "href": "materials/4_data_manipulation_2.html#what-if-a-function-binding-doesnt-exist---revisited",
+    "title": "Big Data in R with Arrow",
+    "section": "What if a function binding doesn’t exist - revisited!",
+    "text": "What if a function binding doesn’t exist - revisited!\n\nOption 1 - find a workaround\nOption 2 - user-defined functions (UDFs)"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#why-use-a-udf",
+    "href": "materials/4_data_manipulation_2.html#why-use-a-udf",
+    "title": "Big Data in R with Arrow",
+    "section": "Why use a UDF?",
+    "text": "Why use a UDF?\n\nIf no bindings for a function exist\nImplement your own custom functions\nRun in R not Arrow"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#how-do-function-bindings-usually-work",
+    "href": "materials/4_data_manipulation_2.html#how-do-function-bindings-usually-work",
+    "title": "Big Data in R with Arrow",
+    "section": "How do function bindings usually work?",
+    "text": "How do function bindings usually work?\n ## How do UDFs work?\n\n\ntime_diff_minutes &lt;- function(pickup, dropoff){\n  difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n}\n\nnyc_taxi |&gt;\n  mutate(\n    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)\n  ) |&gt; \n  select(pickup_datetime, dropoff_datetime, duration_minutes) |&gt;\n  head() |&gt;\n  collect()\n\nError: Expression time_diff_minutes(pickup_datetime, dropoff_datetime) not supported in Arrow\nCall collect() first to pull data into R.\n\n\nWe get an error as we can’t automatically convert the function to arrow."
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition",
+    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition",
+    "title": "Big Data in R with Arrow",
+    "section": "User-defined functions - definition",
+    "text": "User-defined functions - definition\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)\n\nThis looks complicated, so let’s look at it 1 part at a time!"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-1",
+    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-1",
+    "title": "Big Data in R with Arrow",
+    "section": "User-defined functions - definition",
+    "text": "User-defined functions - definition\nStep 1. Give the function a name\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-2",
+    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-2",
+    "title": "Big Data in R with Arrow",
+    "section": "User-defined functions - definition",
+    "text": "User-defined functions - definition\nStep 2. Define the body of the function - first argument must be context\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-3",
+    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-3",
+    "title": "Big Data in R with Arrow",
+    "section": "User-defined functions - definition",
+    "text": "User-defined functions - definition\nStep 3. Set the schema of the input arguments\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-4",
+    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-4",
+    "title": "Big Data in R with Arrow",
+    "section": "User-defined functions - definition",
+    "text": "User-defined functions - definition\nStep 4. Set the data type of the output\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-5",
+    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-5",
+    "title": "Big Data in R with Arrow",
+    "section": "User-defined functions - definition",
+    "text": "User-defined functions - definition\nStep 5. Set auto_convert = TRUE if using in a dplyr pipeline\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---usage",
+    "href": "materials/4_data_manipulation_2.html#user-defined-functions---usage",
+    "title": "Big Data in R with Arrow",
+    "section": "User-defined functions - usage",
+    "text": "User-defined functions - usage\n\nnyc_taxi |&gt;\n  mutate(\n    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)\n  ) |&gt;\n  select(pickup_datetime, dropoff_datetime, duration_minutes) |&gt;\n  head() |&gt;\n  collect()\n\n# A tibble: 6 × 3\n  pickup_datetime     dropoff_datetime    duration_minutes\n  &lt;dttm&gt;              &lt;dttm&gt;                         &lt;int&gt;\n1 2012-10-07 18:19:00 2012-10-07 18:29:00               10\n2 2012-10-07 18:19:00 2012-10-07 18:33:00               14\n3 2012-10-07 18:19:00 2012-10-07 18:35:00               16\n4 2012-10-07 18:19:00 2012-10-07 18:35:00               16\n5 2012-10-07 18:19:00 2012-10-07 18:42:00               23\n6 2012-10-07 18:19:00 2012-10-07 18:43:00               24"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#your-turn",
+    "href": "materials/4_data_manipulation_2.html#your-turn",
+    "title": "Big Data in R with Arrow",
+    "section": "Your Turn",
+    "text": "Your Turn\n\nWrite a user-defined function which wraps the stringr function str_replace_na(), and use it to replace any NA values in the vendor_name column with the string “No vendor” instead. (Test it on the data from 2019 so you’re not pulling everything into memory)\n\n➡️ Data Manipulation Part II Exercises Page"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#summary",
+    "href": "materials/4_data_manipulation_2.html#summary",
+    "title": "Big Data in R with Arrow",
+    "section": "Summary",
+    "text": "Summary\n\nYou can use UDFs to create your own bindings when they don’t exist\nUDFs must be scalar (1 row in -&gt; 1 row out) and stateless (no knowledge of other rows of data)\nCalculations done by R not Arrow, so slower than in-built bindings but still pretty fast"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#joins-1",
+    "href": "materials/4_data_manipulation_2.html#joins-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Joins",
+    "text": "Joins"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#joining-a-reference-table",
+    "href": "materials/4_data_manipulation_2.html#joining-a-reference-table",
+    "title": "Big Data in R with Arrow",
+    "section": "Joining a reference table",
+    "text": "Joining a reference table\n\nvendors &lt;- tibble::tibble(\n  code = c(\"VTS\", \"CMT\", \"DDS\"),\n  full_name = c(\n    \"Verifone Transportation Systems\",\n    \"Creative Mobile Technologies\",\n    \"Digital Dispatch Systems\"\n  )\n)\n\nnyc_taxi |&gt;\n  left_join(vendors, by = c(\"vendor_name\" = \"code\")) |&gt;\n  select(vendor_name, full_name, pickup_datetime) |&gt;\n  head(3) |&gt;\n  collect()\n\n# A tibble: 3 × 3\n  vendor_name full_name                    pickup_datetime    \n  &lt;chr&gt;       &lt;chr&gt;                        &lt;dttm&gt;             \n1 CMT         Creative Mobile Technologies 2012-10-07 17:26:40\n2 CMT         Creative Mobile Technologies 2012-10-07 17:26:52\n3 CMT         Creative Mobile Technologies 2012-10-07 17:26:57"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#traps-for-the-unwary",
+    "href": "materials/4_data_manipulation_2.html#traps-for-the-unwary",
+    "title": "Big Data in R with Arrow",
+    "section": "Traps for the unwary",
+    "text": "Traps for the unwary\nQuestion: which are the most common borough-to-borough journeys in the dataset?\n\nnyc_taxi_zones &lt;- \n  read_csv_arrow(\"data/taxi_zone_lookup.csv\") |&gt;\n  select(location_id = LocationID,\n         borough = Borough)\n\nnyc_taxi_zones\n\n# A tibble: 265 × 2\n   location_id borough      \n         &lt;int&gt; &lt;chr&gt;        \n 1           1 EWR          \n 2           2 Queens       \n 3           3 Bronx        \n 4           4 Manhattan    \n 5           5 Staten Island\n 6           6 Staten Island\n 7           7 Queens       \n 8           8 Queens       \n 9           9 Queens       \n10          10 Queens       \n# ℹ 255 more rows"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#why-didnt-this-work",
+    "href": "materials/4_data_manipulation_2.html#why-didnt-this-work",
+    "title": "Big Data in R with Arrow",
+    "section": "Why didn’t this work?",
+    "text": "Why didn’t this work?\n\nnyc_taxi |&gt;\n  left_join(nyc_taxi_zones, by = c(\"pickup_location_id\" = \"location_id\")) |&gt;\n  collect()\n\nError in `compute.arrow_dplyr_query()`:\n! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(location_id) of type int32"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#schema-for-the-nyc_taxi-dataset",
+    "href": "materials/4_data_manipulation_2.html#schema-for-the-nyc_taxi-dataset",
+    "title": "Big Data in R with Arrow",
+    "section": "Schema for the nyc_taxi Dataset",
+    "text": "Schema for the nyc_taxi Dataset\n\nschema(nyc_taxi)\n\nSchema\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#schema-for-the-nyc_taxi_zones-table",
+    "href": "materials/4_data_manipulation_2.html#schema-for-the-nyc_taxi_zones-table",
+    "title": "Big Data in R with Arrow",
+    "section": "Schema for the nyc_taxi_zones Table",
+    "text": "Schema for the nyc_taxi_zones Table\n\nnyc_taxi_zones_arrow &lt;- arrow_table(nyc_taxi_zones)\nschema(nyc_taxi_zones_arrow)\n\nSchema\nlocation_id: int32\nborough: string\n\n\n\npickup_location_id is int64 in the nyc_taxi table\nlocation_id is int32 in the nyc_taxi_zones table"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#take-control-of-the-schema",
+    "href": "materials/4_data_manipulation_2.html#take-control-of-the-schema",
+    "title": "Big Data in R with Arrow",
+    "section": "Take control of the schema",
+    "text": "Take control of the schema\n\nnyc_taxi_zones_arrow &lt;- arrow_table(\n  nyc_taxi_zones, \n  schema = schema(location_id = int64(), borough = utf8())\n)\n\n\nschema() takes variable name / types as input\narrow has various “type” functions: int64(), utf8(), boolean(), date32() etc"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#take-control-of-the-schema-1",
+    "href": "materials/4_data_manipulation_2.html#take-control-of-the-schema-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Take control of the schema",
+    "text": "Take control of the schema\n\nnyc_taxi_zones_arrow &lt;- arrow_table(\n  nyc_taxi_zones, \n  schema = schema(location_id = int64(), borough = utf8())\n)\nschema(nyc_taxi_zones_arrow)\n\nSchema\nlocation_id: int64\nborough: string"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#prepare-the-auxiliary-tables",
+    "href": "materials/4_data_manipulation_2.html#prepare-the-auxiliary-tables",
+    "title": "Big Data in R with Arrow",
+    "section": "Prepare the auxiliary tables",
+    "text": "Prepare the auxiliary tables\n\npickup &lt;- nyc_taxi_zones_arrow |&gt;\n  select(pickup_location_id = location_id,\n         pickup_borough = borough)\n\ndropoff &lt;- nyc_taxi_zones_arrow |&gt;\n  select(dropoff_location_id = location_id,\n         dropoff_borough = borough)\n\n\nJoin separately for the pickup and dropoff zones"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#join-and-cross-tabulate",
+    "href": "materials/4_data_manipulation_2.html#join-and-cross-tabulate",
+    "title": "Big Data in R with Arrow",
+    "section": "Join and cross-tabulate",
+    "text": "Join and cross-tabulate\n\nlibrary(tictoc)\n\ntic()\nborough_counts &lt;- nyc_taxi |&gt; \n  left_join(pickup) |&gt;\n  left_join(dropoff) |&gt;\n  count(pickup_borough, dropoff_borough) |&gt;\n  arrange(desc(n)) |&gt;\n  collect()\ntoc()\n\n163.966 sec elapsed\n\n\n\n2-3 minutes to join twice and cross-tabulate on non-partition variables, with 1.15 billion rows of data 🙂"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#the-results",
+    "href": "materials/4_data_manipulation_2.html#the-results",
+    "title": "Big Data in R with Arrow",
+    "section": "The results",
+    "text": "The results\n\nborough_counts\n\n# A tibble: 50 × 3\n   pickup_borough dropoff_borough         n\n   &lt;chr&gt;          &lt;chr&gt;               &lt;int&gt;\n 1 &lt;NA&gt;           &lt;NA&gt;            732357953\n 2 Manhattan      Manhattan       351198872\n 3 Queens         Manhattan        14440705\n 4 Manhattan      Queens           13052517\n 5 Manhattan      Brooklyn         11180867\n 6 Queens         Queens            7440356\n 7 Unknown        Unknown           4491811\n 8 Queens         Brooklyn          3662324\n 9 Brooklyn       Brooklyn          3550480\n10 Manhattan      Bronx             2071830\n# ℹ 40 more rows"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#your-turn-1",
+    "href": "materials/4_data_manipulation_2.html#your-turn-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Your Turn",
+    "text": "Your Turn\n\nHow many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? (Hint: you can use stringr::str_detect() to help you find pickup zones with the word “Airport” in them)\n\n➡️ Data Manipulation Part II Exercises Page"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#summary-1",
+    "href": "materials/4_data_manipulation_2.html#summary-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Summary",
+    "text": "Summary\n\nYou can join Arrow Tables and Datasets to R data frames and Arrow Tables\nThe Arrow data type of join keys must always match\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#data-engineering",
+    "href": "materials/3_data_engineering.html#data-engineering",
+    "title": "Big Data in R with Arrow",
+    "section": "Data Engineering",
+    "text": "Data Engineering\n\n\n\n\nhttps://en.wikipedia.org/wiki/Data_engineering"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#norm-files",
+    "href": "materials/3_data_engineering.html#norm-files",
+    "title": "Big Data in R with Arrow",
+    "section": ".NORM Files",
+    "text": ".NORM Files\n\n\n\nhttps://xkcd.com/2116/"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#poll-formats",
+    "href": "materials/3_data_engineering.html#poll-formats",
+    "title": "Big Data in R with Arrow",
+    "section": "Poll: Formats",
+    "text": "Poll: Formats\n\nWhich file formats do you use most often?\n\n\n1️⃣ CSV (.csv)\n2️⃣ MS Excel (.xls and .xlsx)\n3️⃣ Parquet (.parquet)\n4️⃣ Something else"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#arrow-file-formats",
+    "href": "materials/3_data_engineering.html#arrow-file-formats",
+    "title": "Big Data in R with Arrow",
+    "section": "Arrow & File Formats",
+    "text": "Arrow & File Formats"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#seattle-checkouts-big-csv",
+    "href": "materials/3_data_engineering.html#seattle-checkouts-big-csv",
+    "title": "Big Data in R with Arrow",
+    "section": "SeattleCheckoutsBig CSV",
+    "text": "SeattleCheckoutsBig CSV\n\n\nhttps://data.seattle.gov/Community/Checkouts-by-Title/tmmm-ytt6"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#dataset-contents",
+    "href": "materials/3_data_engineering.html#dataset-contents",
+    "title": "Big Data in R with Arrow",
+    "section": "Dataset contents",
+    "text": "Dataset contents"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#arrowopen_dataset-with-a-csv",
+    "href": "materials/3_data_engineering.html#arrowopen_dataset-with-a-csv",
+    "title": "Big Data in R with Arrow",
+    "section": "arrow::open_dataset() with a CSV",
+    "text": "arrow::open_dataset() with a CSV\n\nlibrary(arrow)\nlibrary(dplyr)\n\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n                            format = \"csv\")\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: null\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#arrowschema",
+    "href": "materials/3_data_engineering.html#arrowschema",
+    "title": "Big Data in R with Arrow",
+    "section": "arrow::schema()",
+    "text": "arrow::schema()\n\nCreate a schema or extract one from an object.\n\n\nLet’s extract the schema:\n\nschema(seattle_csv)\n\nSchema\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: null\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#arrow-data-types",
+    "href": "materials/3_data_engineering.html#arrow-data-types",
+    "title": "Big Data in R with Arrow",
+    "section": "Arrow Data Types",
+    "text": "Arrow Data Types\nArrow has a rich data type system, including direct analogs of many R data types\n\n&lt;dbl&gt; == &lt;double&gt;\n&lt;chr&gt; == &lt;string&gt; OR &lt;utf8&gt; (aliases)\n&lt;int&gt; == &lt;int32&gt;\n\n\nhttps://arrow.apache.org/docs/r/articles/data_types.html"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#parsing-the-metadata",
+    "href": "materials/3_data_engineering.html#parsing-the-metadata",
+    "title": "Big Data in R with Arrow",
+    "section": "Parsing the Metadata",
+    "text": "Parsing the Metadata\n\nArrow scans 👀 1MB of data to impute or “guess” the data types\n\n📚 arrow vs readr blog post: https://thisisnic.github.io/2022/11/21/type-inference-in-readr-and-arrow/"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#parsers-are-not-always-right",
+    "href": "materials/3_data_engineering.html#parsers-are-not-always-right",
+    "title": "Big Data in R with Arrow",
+    "section": "Parsers Are Not Always Right",
+    "text": "Parsers Are Not Always Right\n\nschema(seattle_csv)\n\nSchema\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: null\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string\n\n\n\n\nInternational Standard Book Number (ISBN) is a 13-digit number that uniquely identifies books and book-like products published internationally.\nData Dictionaries, metadata in data catalogues should provide this info.\nThe number or rows used to infer the schema will vary depending on the data in each column, total number of columns, and how many bytes each value takes up in memory.\nIf all of the values in a column that lie within the first 1MB of the file are missing values, arrow will classify this data as null type. ISBN! Phone numbers, zip codes, leading zeros…\nRecommended specifying a schema when working with CSV datasets to avoid potential issues like this"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#lets-control-the-schema",
+    "href": "materials/3_data_engineering.html#lets-control-the-schema",
+    "title": "Big Data in R with Arrow",
+    "section": "Let’s Control the Schema",
+    "text": "Let’s Control the Schema\nCreating a schema manually:\n\nschema(\n  UsageClass = utf8(),\n  CheckoutType = utf8(),\n  MaterialType = utf8(),\n  CheckoutYear = int64(),\n  CheckoutMonth = int64(),\n  Checkouts = int64(),\n  Title = utf8(),\n  ISBN = string(), #utf8()\n  Creator = utf8(),\n  Subjects = utf8(),\n  Publisher = utf8(),\n  PublicationYear = utf8()\n)\n\n\nThis will take a lot of typing with 12 columns 😢"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#lets-control-the-schema-1",
+    "href": "materials/3_data_engineering.html#lets-control-the-schema-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Let’s Control the Schema",
+    "text": "Let’s Control the Schema\nUse the code() method to extract the code from the schema:\n\nseattle_csv$schema$code() \n\nschema(UsageClass = utf8(), CheckoutType = utf8(), MaterialType = utf8(), \n    CheckoutYear = int64(), CheckoutMonth = int64(), Checkouts = int64(), \n    Title = utf8(), ISBN = null(), Creator = utf8(), Subjects = utf8(), \n    Publisher = utf8(), PublicationYear = utf8())\n\n\n\n🤩"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#lets-control-the-schema-2",
+    "href": "materials/3_data_engineering.html#lets-control-the-schema-2",
+    "title": "Big Data in R with Arrow",
+    "section": "Let’s Control the Schema",
+    "text": "Let’s Control the Schema\nSchema defines column names and types, so we need to skip the first row (skip = 1):\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  schema = schema(\n    UsageClass = utf8(),\n    CheckoutType = utf8(),\n    MaterialType = utf8(),\n    CheckoutYear = int64(),\n    CheckoutMonth = int64(),\n    Checkouts = int64(),\n    Title = utf8(),\n    ISBN = string(), #utf8()\n    Creator = utf8(),\n    Subjects = utf8(),\n    Publisher = utf8(),\n    PublicationYear = utf8()\n  ),\n    skip = 1,\n)\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: string\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#lets-control-the-schema-3",
+    "href": "materials/3_data_engineering.html#lets-control-the-schema-3",
+    "title": "Big Data in R with Arrow",
+    "section": "Let’s Control the Schema",
+    "text": "Let’s Control the Schema\nSupply column types for a subset of columns by providing a partial schema:\n\nseattle_csv &lt;- open_dataset(\n  sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  col_types = schema(ISBN = string()) #utf8()\n)\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: string\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#your-turn",
+    "href": "materials/3_data_engineering.html#your-turn",
+    "title": "Big Data in R with Arrow",
+    "section": "Your Turn",
+    "text": "Your Turn\n\nThe first few thousand rows of ISBN are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with open_dataset() and ensure the correct data type for ISBN is &lt;string&gt; (or the alias &lt;utf8&gt;) instead of the &lt;null&gt; interpreted by Arrow.\nOnce you have a Dataset object with the metadata you are after, count the number of Checkouts by CheckoutYear and arrange the result by CheckoutYear.\n\n➡️ Data Storage Engineering Exercises Page"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr",
+    "href": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr",
+    "title": "Big Data in R with Arrow",
+    "section": "9GB CSV file + arrow + dplyr",
+    "text": "9GB CSV file + arrow + dplyr\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect()\n\n# A tibble: 18 × 2\n   CheckoutYear `sum(Checkouts)`\n          &lt;int&gt;            &lt;int&gt;\n 1         2005          3798685\n 2         2006          6599318\n 3         2007          7126627\n 4         2008          8438486\n 5         2009          9135167\n 6         2010          8608966\n 7         2011          8321732\n 8         2012          8163046\n 9         2013          9057096\n10         2014          9136081\n11         2015          9084179\n12         2016          9021051\n13         2017          9231648\n14         2018          9149176\n15         2019          9199083\n16         2020          6053717\n17         2021          7361031\n18         2022          7001989"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr-1",
+    "href": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr-1",
+    "title": "Big Data in R with Arrow",
+    "section": "9GB CSV file + arrow + dplyr",
+    "text": "9GB CSV file + arrow + dplyr\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 10.688   1.099  10.451 \n\n\n42 million rows – not bad, but could be faster…."
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#file-format-apache-parquet",
+    "href": "materials/3_data_engineering.html#file-format-apache-parquet",
+    "title": "Big Data in R with Arrow",
+    "section": "File Format: Apache Parquet",
+    "text": "File Format: Apache Parquet\n\n\nhttps://parquet.apache.org/"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#parquet-files-row-chunked",
+    "href": "materials/3_data_engineering.html#parquet-files-row-chunked",
+    "title": "Big Data in R with Arrow",
+    "section": "Parquet Files: “row-chunked”",
+    "text": "Parquet Files: “row-chunked”"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#parquet-files-row-chunked-column-oriented",
+    "href": "materials/3_data_engineering.html#parquet-files-row-chunked-column-oriented",
+    "title": "Big Data in R with Arrow",
+    "section": "Parquet Files: “row-chunked & column-oriented”",
+    "text": "Parquet Files: “row-chunked & column-oriented”"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#parquet",
+    "href": "materials/3_data_engineering.html#parquet",
+    "title": "Big Data in R with Arrow",
+    "section": "Parquet",
+    "text": "Parquet\n\ncompression and encoding == usually much smaller than equivalent CSV file, less data to move from disk to memory\nrich type system & stores the schema along with the data == more robust pipelines\n“row-chunked & column-oriented” == work on different parts of the file at the same time or skip some chunks all together, better performance than row-by-row\n\n\n\nefficient encodings to keep file size down, and supports file compression, less data to move from disk to memory\nCSV has no info about data types, inferred by each parser"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#writing-to-parquet",
+    "href": "materials/3_data_engineering.html#writing-to-parquet",
+    "title": "Big Data in R with Arrow",
+    "section": "Writing to Parquet",
+    "text": "Writing to Parquet\n\nseattle_parquet &lt;- \"data/seattle-library-checkouts-parquet\"\n\nseattle_csv |&gt;\n  write_dataset(path = seattle_parquet,\n                format = \"parquet\")"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#storage-parquet-vs-csv",
+    "href": "materials/3_data_engineering.html#storage-parquet-vs-csv",
+    "title": "Big Data in R with Arrow",
+    "section": "Storage: Parquet vs CSV",
+    "text": "Storage: Parquet vs CSV\n\nfile &lt;- list.files(seattle_parquet)\nfile.size(file.path(seattle_parquet, file)) / 10**9\n\n[1] 4.424267\n\n\n\nParquet about half the size of the CSV file on-disk 💾"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#your-turn-1",
+    "href": "materials/3_data_engineering.html#your-turn-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Your Turn",
+    "text": "Your Turn\n\nRe-run the query counting the number of Checkouts by CheckoutYear and arranging the result by CheckoutYear, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?\n\n➡️ Data Storage Engineering Exercises Page"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#gb-parquet-file-arrow-dplyr",
+    "href": "materials/3_data_engineering.html#gb-parquet-file-arrow-dplyr",
+    "title": "Big Data in R with Arrow",
+    "section": "4.5GB Parquet file + arrow + dplyr",
+    "text": "4.5GB Parquet file + arrow + dplyr\n\nopen_dataset(sources = seattle_parquet, \n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.771   0.431   0.568 \n\n\n42 million rows – much better! But could be even faster…."
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#file-storage-partitioning",
+    "href": "materials/3_data_engineering.html#file-storage-partitioning",
+    "title": "Big Data in R with Arrow",
+    "section": "File Storage:Partitioning",
+    "text": "File Storage:Partitioning\n\n\n\nDividing data into smaller pieces, making it more easily accessible and manageable\n\n\n\n\n\nalso called multi-files or sometimes shards"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#poll-partitioning",
+    "href": "materials/3_data_engineering.html#poll-partitioning",
+    "title": "Big Data in R with Arrow",
+    "section": "Poll: Partitioning?",
+    "text": "Poll: Partitioning?\nHave you partitioned your data or used partitioned data before today?\n\n\n1️⃣ Yes\n2️⃣ No\n3️⃣ Not sure, the data engineers sort that out!"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#art-science-of-partitioning",
+    "href": "materials/3_data_engineering.html#art-science-of-partitioning",
+    "title": "Big Data in R with Arrow",
+    "section": "Art & Science of Partitioning",
+    "text": "Art & Science of Partitioning\n\n\navoid files &lt; 20MB and &gt; 2GB\navoid &gt; 10,000 files (🤯)\npartition on variables used in filter()\n\n\n\nguidelines not rules, results vary\nexperiment, especially with cloud\narrow suggests avoid files smaller than 20MB and larger than 2GB\navoid partitions that produce more than 10,000 files\npartition by variables that you filter by, allows arrow to only read relevant files"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#rewriting-the-data-again",
+    "href": "materials/3_data_engineering.html#rewriting-the-data-again",
+    "title": "Big Data in R with Arrow",
+    "section": "Rewriting the Data Again",
+    "text": "Rewriting the Data Again\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  write_dataset(path = seattle_parquet_part,\n                format = \"parquet\")"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#what-did-we-engineer",
+    "href": "materials/3_data_engineering.html#what-did-we-engineer",
+    "title": "Big Data in R with Arrow",
+    "section": "What Did We “Engineer”?",
+    "text": "What Did We “Engineer”?\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nsizes &lt;- tibble(\n  files = list.files(seattle_parquet_part, recursive = TRUE),\n  size_GB = file.size(file.path(seattle_parquet_part, files)) / 10**9\n)\n\nsizes\n\n# A tibble: 18 × 2\n   files                            size_GB\n   &lt;chr&gt;                              &lt;dbl&gt;\n 1 CheckoutYear=2005/part-0.parquet   0.115\n 2 CheckoutYear=2006/part-0.parquet   0.172\n 3 CheckoutYear=2007/part-0.parquet   0.186\n 4 CheckoutYear=2008/part-0.parquet   0.204\n 5 CheckoutYear=2009/part-0.parquet   0.224\n 6 CheckoutYear=2010/part-0.parquet   0.233\n 7 CheckoutYear=2011/part-0.parquet   0.250\n 8 CheckoutYear=2012/part-0.parquet   0.261\n 9 CheckoutYear=2013/part-0.parquet   0.282\n10 CheckoutYear=2014/part-0.parquet   0.296\n11 CheckoutYear=2015/part-0.parquet   0.308\n12 CheckoutYear=2016/part-0.parquet   0.315\n13 CheckoutYear=2017/part-0.parquet   0.319\n14 CheckoutYear=2018/part-0.parquet   0.306\n15 CheckoutYear=2019/part-0.parquet   0.303\n16 CheckoutYear=2020/part-0.parquet   0.158\n17 CheckoutYear=2021/part-0.parquet   0.240\n18 CheckoutYear=2022/part-0.parquet   0.252"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#gb-partitioned-parquet-files-arrow-dplyr",
+    "href": "materials/3_data_engineering.html#gb-partitioned-parquet-files-arrow-dplyr",
+    "title": "Big Data in R with Arrow",
+    "section": "4.5GB partitioned Parquet files + arrow + dplyr",
+    "text": "4.5GB partitioned Parquet files + arrow + dplyr\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nopen_dataset(sources = seattle_parquet_part,\n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.742   0.385   0.366 \n\n\n\n42 million rows – not too shabby!"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#your-turn-2",
+    "href": "materials/3_data_engineering.html#your-turn-2",
+    "title": "Big Data in R with Arrow",
+    "section": "Your Turn",
+    "text": "Your Turn\n\nLet’s write the Seattle Checkout CSV data to a multi-file dataset just one more time! This time, write the data partitioned by CheckoutType as Parquet files.\nNow compare the compute time between our Parquet data partitioned by CheckoutYear and our Parquet data partitioned by CheckoutType with a query of the total number of checkouts in September of 2019. Did you find a difference in compute time?\n\n➡️ Data Storage Engineering Exercises Page"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#partition-design",
+    "href": "materials/3_data_engineering.html#partition-design",
+    "title": "Big Data in R with Arrow",
+    "section": "Partition Design",
+    "text": "Partition Design\n\n\n\nPartitioning on variables commonly used in filter() often faster\nNumber of partitions also important (Arrow reads the metadata of each file)"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#partitions-na-values",
+    "href": "materials/3_data_engineering.html#partitions-na-values",
+    "title": "Big Data in R with Arrow",
+    "section": "Partitions & NA Values",
+    "text": "Partitions & NA Values\nDefault:\n\npartition_na_default_path &lt;- \"data/na-partition-default\"\n\nwrite_dataset(starwars,\n              partition_na_default_path,\n              partitioning = \"hair_color\")\n\nlist.files(partition_na_default_path)\n\n [1] \"hair_color=__HIVE_DEFAULT_PARTITION__\"\n [2] \"hair_color=auburn\"                    \n [3] \"hair_color=auburn%2C%20grey\"          \n [4] \"hair_color=auburn%2C%20white\"         \n [5] \"hair_color=black\"                     \n [6] \"hair_color=blond\"                     \n [7] \"hair_color=blonde\"                    \n [8] \"hair_color=brown\"                     \n [9] \"hair_color=brown%2C%20grey\"           \n[10] \"hair_color=grey\"                      \n[11] \"hair_color=none\"                      \n[12] \"hair_color=white\""
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#partitions-na-values-1",
+    "href": "materials/3_data_engineering.html#partitions-na-values-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Partitions & NA Values",
+    "text": "Partitions & NA Values\nCustom:\n\npartition_na_custom_path &lt;- \"data/na-partition-custom\"\n\nwrite_dataset(starwars,\n              partition_na_custom_path,\n              partitioning = hive_partition(hair_color = string(),\n                                            null_fallback = \"no_color\"))\n\nlist.files(partition_na_custom_path)\n\n [1] \"hair_color=auburn\"            \"hair_color=auburn%2C%20grey\" \n [3] \"hair_color=auburn%2C%20white\" \"hair_color=black\"            \n [5] \"hair_color=blond\"             \"hair_color=blonde\"           \n [7] \"hair_color=brown\"             \"hair_color=brown%2C%20grey\"  \n [9] \"hair_color=grey\"              \"hair_color=no_color\"         \n[11] \"hair_color=none\"              \"hair_color=white\""
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#performance-review-single-csv",
+    "href": "materials/3_data_engineering.html#performance-review-single-csv",
+    "title": "Big Data in R with Arrow",
+    "section": "Performance Review: Single CSV",
+    "text": "Performance Review: Single CSV\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts.csv\", \n  format = \"csv\") |&gt; \n\n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 11.718   1.106  11.250"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#performance-review-partitioned-parquet",
+    "href": "materials/3_data_engineering.html#performance-review-partitioned-parquet",
+    "title": "Big Data in R with Arrow",
+    "section": "Performance Review: Partitioned Parquet",
+    "text": "Performance Review: Partitioned Parquet\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts\",\n             format = \"parquet\") |&gt; \n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.224   0.040   0.068"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#engineering-data-tips-for-improved-storage-performance",
+    "href": "materials/3_data_engineering.html#engineering-data-tips-for-improved-storage-performance",
+    "title": "Big Data in R with Arrow",
+    "section": "Engineering Data Tips for Improved Storage & Performance",
+    "text": "Engineering Data Tips for Improved Storage & Performance\n\n\nconsider “column-oriented” file formats like Parquet\nconsider partitioning, experiment to get an appropriate partition design 🗂️\nwatch your schemas 👀"
+  },
+  {
+    "objectID": "materials/3_data_engineering.html#r-for-data-science-2e",
+    "href": "materials/3_data_engineering.html#r-for-data-science-2e",
+    "title": "Big Data in R with Arrow",
+    "section": "R for Data Science (2e)",
+    "text": "R for Data Science (2e)\n\n\n\n\n\nChapter 23: Arrow\n\nhttps://r4ds.hadley.nz/\n\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+  },
+  {
     "objectID": "materials/2_data_manipulation_1.html#goals",
     "href": "materials/2_data_manipulation_1.html#goals",
     "title": "Big Data in R with Arrow",
@@ -252,489 +882,6 @@
     "text": "Summary\n\nWorking with Arrow Datasets allow you to manipulate data which is larger-than-memory\nYou can use many dplyr functions with arrow - run ?`arrow-dplyr` to view the docs\nYou can pass data to duckdb to use functions implemented in duckdb but not arrow\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
   },
   {
-    "objectID": "materials/3_data_engineering.html#data-engineering",
-    "href": "materials/3_data_engineering.html#data-engineering",
-    "title": "Big Data in R with Arrow",
-    "section": "Data Engineering",
-    "text": "Data Engineering\n\n\n\n\nhttps://en.wikipedia.org/wiki/Data_engineering"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#norm-files",
-    "href": "materials/3_data_engineering.html#norm-files",
-    "title": "Big Data in R with Arrow",
-    "section": ".NORM Files",
-    "text": ".NORM Files\n\n\n\nhttps://xkcd.com/2116/"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#poll-formats",
-    "href": "materials/3_data_engineering.html#poll-formats",
-    "title": "Big Data in R with Arrow",
-    "section": "Poll: Formats",
-    "text": "Poll: Formats\n\nWhich file formats do you use most often?\n\n\n1️⃣ CSV (.csv)\n2️⃣ MS Excel (.xls and .xlsx)\n3️⃣ Parquet (.parquet)\n4️⃣ Something else"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#arrow-file-formats",
-    "href": "materials/3_data_engineering.html#arrow-file-formats",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow & File Formats",
-    "text": "Arrow & File Formats"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#seattle-checkouts-big-csv",
-    "href": "materials/3_data_engineering.html#seattle-checkouts-big-csv",
-    "title": "Big Data in R with Arrow",
-    "section": "SeattleCheckoutsBig CSV",
-    "text": "SeattleCheckoutsBig CSV\n\n\nhttps://data.seattle.gov/Community/Checkouts-by-Title/tmmm-ytt6"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#dataset-contents",
-    "href": "materials/3_data_engineering.html#dataset-contents",
-    "title": "Big Data in R with Arrow",
-    "section": "Dataset contents",
-    "text": "Dataset contents"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#arrowopen_dataset-with-a-csv",
-    "href": "materials/3_data_engineering.html#arrowopen_dataset-with-a-csv",
-    "title": "Big Data in R with Arrow",
-    "section": "arrow::open_dataset() with a CSV",
-    "text": "arrow::open_dataset() with a CSV\n\nlibrary(arrow)\nlibrary(dplyr)\n\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n                            format = \"csv\")\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: null\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#arrowschema",
-    "href": "materials/3_data_engineering.html#arrowschema",
-    "title": "Big Data in R with Arrow",
-    "section": "arrow::schema()",
-    "text": "arrow::schema()\n\nCreate a schema or extract one from an object.\n\n\nLet’s extract the schema:\n\nschema(seattle_csv)\n\nSchema\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: null\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#arrow-data-types",
-    "href": "materials/3_data_engineering.html#arrow-data-types",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow Data Types",
-    "text": "Arrow Data Types\nArrow has a rich data type system, including direct analogs of many R data types\n\n&lt;dbl&gt; == &lt;double&gt;\n&lt;chr&gt; == &lt;string&gt; OR &lt;utf8&gt; (aliases)\n&lt;int&gt; == &lt;int32&gt;\n\n\nhttps://arrow.apache.org/docs/r/articles/data_types.html"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#parsing-the-metadata",
-    "href": "materials/3_data_engineering.html#parsing-the-metadata",
-    "title": "Big Data in R with Arrow",
-    "section": "Parsing the Metadata",
-    "text": "Parsing the Metadata\n\nArrow scans 👀 1MB of data to impute or “guess” the data types\n\n📚 arrow vs readr blog post: https://thisisnic.github.io/2022/11/21/type-inference-in-readr-and-arrow/"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#parsers-are-not-always-right",
-    "href": "materials/3_data_engineering.html#parsers-are-not-always-right",
-    "title": "Big Data in R with Arrow",
-    "section": "Parsers Are Not Always Right",
-    "text": "Parsers Are Not Always Right\n\nschema(seattle_csv)\n\nSchema\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: null\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string\n\n\n\n\nInternational Standard Book Number (ISBN) is a 13-digit number that uniquely identifies books and book-like products published internationally.\nData Dictionaries, metadata in data catalogues should provide this info.\nThe number or rows used to infer the schema will vary depending on the data in each column, total number of columns, and how many bytes each value takes up in memory.\nIf all of the values in a column that lie within the first 1MB of the file are missing values, arrow will classify this data as null type. ISBN! Phone numbers, zip codes, leading zeros…\nRecommended specifying a schema when working with CSV datasets to avoid potential issues like this"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#lets-control-the-schema",
-    "href": "materials/3_data_engineering.html#lets-control-the-schema",
-    "title": "Big Data in R with Arrow",
-    "section": "Let’s Control the Schema",
-    "text": "Let’s Control the Schema\nCreating a schema manually:\n\nschema(\n  UsageClass = utf8(),\n  CheckoutType = utf8(),\n  MaterialType = utf8(),\n  CheckoutYear = int64(),\n  CheckoutMonth = int64(),\n  Checkouts = int64(),\n  Title = utf8(),\n  ISBN = string(), #utf8()\n  Creator = utf8(),\n  Subjects = utf8(),\n  Publisher = utf8(),\n  PublicationYear = utf8()\n)\n\n\nThis will take a lot of typing with 12 columns 😢"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#lets-control-the-schema-1",
-    "href": "materials/3_data_engineering.html#lets-control-the-schema-1",
-    "title": "Big Data in R with Arrow",
-    "section": "Let’s Control the Schema",
-    "text": "Let’s Control the Schema\nUse the code() method to extract the code from the schema:\n\nseattle_csv$schema$code() \n\nschema(UsageClass = utf8(), CheckoutType = utf8(), MaterialType = utf8(), \n    CheckoutYear = int64(), CheckoutMonth = int64(), Checkouts = int64(), \n    Title = utf8(), ISBN = null(), Creator = utf8(), Subjects = utf8(), \n    Publisher = utf8(), PublicationYear = utf8())\n\n\n\n🤩"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#lets-control-the-schema-2",
-    "href": "materials/3_data_engineering.html#lets-control-the-schema-2",
-    "title": "Big Data in R with Arrow",
-    "section": "Let’s Control the Schema",
-    "text": "Let’s Control the Schema\nSchema defines column names and types, so we need to skip the first row (skip = 1):\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  schema = schema(\n    UsageClass = utf8(),\n    CheckoutType = utf8(),\n    MaterialType = utf8(),\n    CheckoutYear = int64(),\n    CheckoutMonth = int64(),\n    Checkouts = int64(),\n    Title = utf8(),\n    ISBN = string(), #utf8()\n    Creator = utf8(),\n    Subjects = utf8(),\n    Publisher = utf8(),\n    PublicationYear = utf8()\n  ),\n    skip = 1,\n)\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: string\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#lets-control-the-schema-3",
-    "href": "materials/3_data_engineering.html#lets-control-the-schema-3",
-    "title": "Big Data in R with Arrow",
-    "section": "Let’s Control the Schema",
-    "text": "Let’s Control the Schema\nSupply column types for a subset of columns by providing a partial schema:\n\nseattle_csv &lt;- open_dataset(\n  sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  col_types = schema(ISBN = string()) #utf8()\n)\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: string\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#your-turn",
-    "href": "materials/3_data_engineering.html#your-turn",
-    "title": "Big Data in R with Arrow",
-    "section": "Your Turn",
-    "text": "Your Turn\n\nThe first few thousand rows of ISBN are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with open_dataset() and ensure the correct data type for ISBN is &lt;string&gt; (or the alias &lt;utf8&gt;) instead of the &lt;null&gt; interpreted by Arrow.\nOnce you have a Dataset object with the metadata you are after, count the number of Checkouts by CheckoutYear and arrange the result by CheckoutYear.\n\n➡️ Data Storage Engineering Exercises Page"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr",
-    "href": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr",
-    "title": "Big Data in R with Arrow",
-    "section": "9GB CSV file + arrow + dplyr",
-    "text": "9GB CSV file + arrow + dplyr\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect()\n\n# A tibble: 18 × 2\n   CheckoutYear `sum(Checkouts)`\n          &lt;int&gt;            &lt;int&gt;\n 1         2005          3798685\n 2         2006          6599318\n 3         2007          7126627\n 4         2008          8438486\n 5         2009          9135167\n 6         2010          8608966\n 7         2011          8321732\n 8         2012          8163046\n 9         2013          9057096\n10         2014          9136081\n11         2015          9084179\n12         2016          9021051\n13         2017          9231648\n14         2018          9149176\n15         2019          9199083\n16         2020          6053717\n17         2021          7361031\n18         2022          7001989"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr-1",
-    "href": "materials/3_data_engineering.html#gb-csv-file-arrow-dplyr-1",
-    "title": "Big Data in R with Arrow",
-    "section": "9GB CSV file + arrow + dplyr",
-    "text": "9GB CSV file + arrow + dplyr\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 10.688   1.099  10.451 \n\n\n42 million rows – not bad, but could be faster…."
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#file-format-apache-parquet",
-    "href": "materials/3_data_engineering.html#file-format-apache-parquet",
-    "title": "Big Data in R with Arrow",
-    "section": "File Format: Apache Parquet",
-    "text": "File Format: Apache Parquet\n\n\nhttps://parquet.apache.org/"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#parquet-files-row-chunked",
-    "href": "materials/3_data_engineering.html#parquet-files-row-chunked",
-    "title": "Big Data in R with Arrow",
-    "section": "Parquet Files: “row-chunked”",
-    "text": "Parquet Files: “row-chunked”"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#parquet-files-row-chunked-column-oriented",
-    "href": "materials/3_data_engineering.html#parquet-files-row-chunked-column-oriented",
-    "title": "Big Data in R with Arrow",
-    "section": "Parquet Files: “row-chunked & column-oriented”",
-    "text": "Parquet Files: “row-chunked & column-oriented”"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#parquet",
-    "href": "materials/3_data_engineering.html#parquet",
-    "title": "Big Data in R with Arrow",
-    "section": "Parquet",
-    "text": "Parquet\n\ncompression and encoding == usually much smaller than equivalent CSV file, less data to move from disk to memory\nrich type system & stores the schema along with the data == more robust pipelines\n“row-chunked & column-oriented” == work on different parts of the file at the same time or skip some chunks all together, better performance than row-by-row\n\n\n\nefficient encodings to keep file size down, and supports file compression, less data to move from disk to memory\nCSV has no info about data types, inferred by each parser"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#writing-to-parquet",
-    "href": "materials/3_data_engineering.html#writing-to-parquet",
-    "title": "Big Data in R with Arrow",
-    "section": "Writing to Parquet",
-    "text": "Writing to Parquet\n\nseattle_parquet &lt;- \"data/seattle-library-checkouts-parquet\"\n\nseattle_csv |&gt;\n  write_dataset(path = seattle_parquet,\n                format = \"parquet\")"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#storage-parquet-vs-csv",
-    "href": "materials/3_data_engineering.html#storage-parquet-vs-csv",
-    "title": "Big Data in R with Arrow",
-    "section": "Storage: Parquet vs CSV",
-    "text": "Storage: Parquet vs CSV\n\nfile &lt;- list.files(seattle_parquet)\nfile.size(file.path(seattle_parquet, file)) / 10**9\n\n[1] 4.424267\n\n\n\nParquet about half the size of the CSV file on-disk 💾"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#your-turn-1",
-    "href": "materials/3_data_engineering.html#your-turn-1",
-    "title": "Big Data in R with Arrow",
-    "section": "Your Turn",
-    "text": "Your Turn\n\nRe-run the query counting the number of Checkouts by CheckoutYear and arranging the result by CheckoutYear, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?\n\n➡️ Data Storage Engineering Exercises Page"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#gb-parquet-file-arrow-dplyr",
-    "href": "materials/3_data_engineering.html#gb-parquet-file-arrow-dplyr",
-    "title": "Big Data in R with Arrow",
-    "section": "4.5GB Parquet file + arrow + dplyr",
-    "text": "4.5GB Parquet file + arrow + dplyr\n\nopen_dataset(sources = seattle_parquet, \n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.771   0.431   0.568 \n\n\n42 million rows – much better! But could be even faster…."
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#file-storage-partitioning",
-    "href": "materials/3_data_engineering.html#file-storage-partitioning",
-    "title": "Big Data in R with Arrow",
-    "section": "File Storage:Partitioning",
-    "text": "File Storage:Partitioning\n\n\n\nDividing data into smaller pieces, making it more easily accessible and manageable\n\n\n\n\n\nalso called multi-files or sometimes shards"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#poll-partitioning",
-    "href": "materials/3_data_engineering.html#poll-partitioning",
-    "title": "Big Data in R with Arrow",
-    "section": "Poll: Partitioning?",
-    "text": "Poll: Partitioning?\nHave you partitioned your data or used partitioned data before today?\n\n\n1️⃣ Yes\n2️⃣ No\n3️⃣ Not sure, the data engineers sort that out!"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#art-science-of-partitioning",
-    "href": "materials/3_data_engineering.html#art-science-of-partitioning",
-    "title": "Big Data in R with Arrow",
-    "section": "Art & Science of Partitioning",
-    "text": "Art & Science of Partitioning\n\n\navoid files &lt; 20MB and &gt; 2GB\navoid &gt; 10,000 files (🤯)\npartition on variables used in filter()\n\n\n\nguidelines not rules, results vary\nexperiment, especially with cloud\narrow suggests avoid files smaller than 20MB and larger than 2GB\navoid partitions that produce more than 10,000 files\npartition by variables that you filter by, allows arrow to only read relevant files"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#rewriting-the-data-again",
-    "href": "materials/3_data_engineering.html#rewriting-the-data-again",
-    "title": "Big Data in R with Arrow",
-    "section": "Rewriting the Data Again",
-    "text": "Rewriting the Data Again\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  write_dataset(path = seattle_parquet_part,\n                format = \"parquet\")"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#what-did-we-engineer",
-    "href": "materials/3_data_engineering.html#what-did-we-engineer",
-    "title": "Big Data in R with Arrow",
-    "section": "What Did We “Engineer”?",
-    "text": "What Did We “Engineer”?\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nsizes &lt;- tibble(\n  files = list.files(seattle_parquet_part, recursive = TRUE),\n  size_GB = file.size(file.path(seattle_parquet_part, files)) / 10**9\n)\n\nsizes\n\n# A tibble: 18 × 2\n   files                            size_GB\n   &lt;chr&gt;                              &lt;dbl&gt;\n 1 CheckoutYear=2005/part-0.parquet   0.115\n 2 CheckoutYear=2006/part-0.parquet   0.172\n 3 CheckoutYear=2007/part-0.parquet   0.186\n 4 CheckoutYear=2008/part-0.parquet   0.204\n 5 CheckoutYear=2009/part-0.parquet   0.224\n 6 CheckoutYear=2010/part-0.parquet   0.233\n 7 CheckoutYear=2011/part-0.parquet   0.250\n 8 CheckoutYear=2012/part-0.parquet   0.261\n 9 CheckoutYear=2013/part-0.parquet   0.282\n10 CheckoutYear=2014/part-0.parquet   0.296\n11 CheckoutYear=2015/part-0.parquet   0.308\n12 CheckoutYear=2016/part-0.parquet   0.315\n13 CheckoutYear=2017/part-0.parquet   0.319\n14 CheckoutYear=2018/part-0.parquet   0.306\n15 CheckoutYear=2019/part-0.parquet   0.303\n16 CheckoutYear=2020/part-0.parquet   0.158\n17 CheckoutYear=2021/part-0.parquet   0.240\n18 CheckoutYear=2022/part-0.parquet   0.252"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#gb-partitioned-parquet-files-arrow-dplyr",
-    "href": "materials/3_data_engineering.html#gb-partitioned-parquet-files-arrow-dplyr",
-    "title": "Big Data in R with Arrow",
-    "section": "4.5GB partitioned Parquet files + arrow + dplyr",
-    "text": "4.5GB partitioned Parquet files + arrow + dplyr\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nopen_dataset(sources = seattle_parquet_part,\n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.742   0.385   0.366 \n\n\n\n42 million rows – not too shabby!"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#your-turn-2",
-    "href": "materials/3_data_engineering.html#your-turn-2",
-    "title": "Big Data in R with Arrow",
-    "section": "Your Turn",
-    "text": "Your Turn\n\nLet’s write the Seattle Checkout CSV data to a multi-file dataset just one more time! This time, write the data partitioned by CheckoutType as Parquet files.\nNow compare the compute time between our Parquet data partitioned by CheckoutYear and our Parquet data partitioned by CheckoutType with a query of the total number of checkouts in September of 2019. Did you find a difference in compute time?\n\n➡️ Data Storage Engineering Exercises Page"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#partitions-na-values",
-    "href": "materials/3_data_engineering.html#partitions-na-values",
-    "title": "Big Data in R with Arrow",
-    "section": "Partitions & NA Values",
-    "text": "Partitions & NA Values\nDefault:\n\npartition_na_default_path &lt;- \"data/na-partition-default\"\n\nwrite_dataset(starwars,\n              partition_na_default_path,\n              partitioning = \"hair_color\")\n\nlist.files(partition_na_default_path)\n\n [1] \"hair_color=__HIVE_DEFAULT_PARTITION__\"\n [2] \"hair_color=auburn\"                    \n [3] \"hair_color=auburn%2C%20grey\"          \n [4] \"hair_color=auburn%2C%20white\"         \n [5] \"hair_color=black\"                     \n [6] \"hair_color=blond\"                     \n [7] \"hair_color=blonde\"                    \n [8] \"hair_color=brown\"                     \n [9] \"hair_color=brown%2C%20grey\"           \n[10] \"hair_color=grey\"                      \n[11] \"hair_color=none\"                      \n[12] \"hair_color=white\""
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#partition-design",
-    "href": "materials/3_data_engineering.html#partition-design",
-    "title": "Big Data in R with Arrow",
-    "section": "Partition Design",
-    "text": "Partition Design\n\n\n\nPartitioning on variables commonly used in filter() often faster\nNumber of partitions also important (Arrow reads the metadata of each file)"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#performance-review-single-csv",
-    "href": "materials/3_data_engineering.html#performance-review-single-csv",
-    "title": "Big Data in R with Arrow",
-    "section": "Performance Review: Single CSV",
-    "text": "Performance Review: Single CSV\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts.csv\", \n  format = \"csv\") |&gt; \n\n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n 11.718   1.106  11.250"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#performance-review-partitioned-parquet",
-    "href": "materials/3_data_engineering.html#performance-review-partitioned-parquet",
-    "title": "Big Data in R with Arrow",
-    "section": "Performance Review: Partitioned Parquet",
-    "text": "Performance Review: Partitioned Parquet\nHow long does it take to calculate the number of books checked out in each month of 2021?\n\n\nopen_dataset(sources = \"data/seattle-library-checkouts\",\n             format = \"parquet\") |&gt; \n  filter(CheckoutYear == 2021, MaterialType == \"BOOK\") |&gt;\n  group_by(CheckoutMonth) |&gt;\n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  arrange(desc(CheckoutMonth)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.224   0.040   0.068"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#engineering-data-tips-for-improved-storage-performance",
-    "href": "materials/3_data_engineering.html#engineering-data-tips-for-improved-storage-performance",
-    "title": "Big Data in R with Arrow",
-    "section": "Engineering Data Tips for Improved Storage & Performance",
-    "text": "Engineering Data Tips for Improved Storage & Performance\n\n\nconsider “column-oriented” file formats like Parquet\nconsider partitioning, experiment to get an appropriate partition design 🗂️\nwatch your schemas 👀"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#r-for-data-science-2e",
-    "href": "materials/3_data_engineering.html#r-for-data-science-2e",
-    "title": "Big Data in R with Arrow",
-    "section": "R for Data Science (2e)",
-    "text": "R for Data Science (2e)\n\n\n\n\n\nChapter 23: Arrow\n\nhttps://r4ds.hadley.nz/\n\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
-  },
-  {
-    "objectID": "setup.html",
-    "href": "setup.html",
-    "title": "Packages & Data",
-    "section": "",
-    "text": "Welcome to the Big Data in R with Arrow workshop. On this page you will find information about the software, packages and data we will be using during the 1-day workshop.\nWe will be using Posit Workbench to learn together. Workbench will be setup with all the below software and data—all participants need to bring is a laptop that can connect to wifi! If you would prefer to run code locally on your own laptop on the day, or if you want to know how to get set-up locally, you can use the below instructions to install the software & packages and download the data."
-  },
-  {
-    "objectID": "setup.html#larger-than-memory-data-option",
-    "href": "setup.html#larger-than-memory-data-option",
-    "title": "Packages & Data",
-    "section": "Larger-Than-Memory Data Option",
-    "text": "Larger-Than-Memory Data Option\n\n1. NYC Taxi Data\nThis is the main dataset we will use on the day. It’s pretty hefty—40 GB in total—and there are a couple of options for how to acquire it, depending on your internet connection speed.\n\nOption 1—the simplest option—for those with a good internet connection and happy to let things run\nIf you have a solid internet connection, and especially if you’re in the US/Canada, this option is the simplest. You can use arrow itself to download the data. Note that there are no progress bars displayed during download, and so your session will appear to hang, but you can check progress by inspecting the contents of the download directory. When we tested this with Steph’s laptop and a fast internet connection, it took 67 minutes, though results will likely vary widely.\nThis method requires the arrow R package to have been built with S3 support enabled. This is on by default for most MacOS and Windows users, but if you’re on Linux, take a look at the instructions here.\nAfter installing arrow, run the following code:\n\nlibrary(arrow)\nlibrary(dplyr)\n\ndata_path &lt;- \"data/nyc-taxi\" # Or set your own preferred path\n\nopen_dataset(\"s3://voltrondata-labs-datasets/nyc-taxi\") |&gt;\n    filter(year %in% 2012:2021) |&gt; \n    write_dataset(data_path, partitioning = c(\"year\", \"month\"))\n\nOnce this has completed, you can check everything has downloaded correctly by calling:\n\nopen_dataset(data_path) |&gt;\n    nrow()\n\nIt might take a moment to run (the data has over a billion rows!), but you should expect to see:\n[1] 1150352666\nIf you get an error message, your download may have been interrupted at some point. The error message will name the file which could not be read. Manually delete this file and run the nrow() code snippet again until you successfully load the remaining data. You can then download any missing files individually using option 2.\n\n\nOption 2—one file at a time via https\nIf you have a slower internet connection or are further away from the data S3 bucket location, it’s probably going to be simpler to download the data file-by-file. Or, if you had any interruptions to your download process in the previous step, you can either try instead with this method, or delete the files which weren’t downloaded properly, and use this method to just download the files you need.\nWe’ve created a script for you which downloads the data one file at a time via https. The script also checks for previously downloaded data, so if you encounter problems downloading any files, just delete the partially downloaded file and run again—the script will only download files which are missing.\n\ndownload_via_https &lt;- function(data_dir, years = 2012:2021){\n\n    # Set this option as we'll be downloading large files and R has a default\n    # timeout of 60 seconds, so we've updated this to 30 mins\n    options(timeout = 1800)\n    \n    # The S3 bucket where the data is stored\n    bucket &lt;- \"https://voltrondata-labs-datasets.s3.us-east-2.amazonaws.com\"\n    \n    # Collect any errors raised during the download process\n    problems &lt;- c()\n    \n    # Download the data from S3 - loops through the data files, downloading 1 file at a time\n    for (year in years) {\n      \n      # We only have 2 months for 2022 data\n      if(year ==2022){\n        months = 1:2\n      } else {\n        months = 1:12\n      }\n      \n      for (month in months) {\n        \n        # Work out where we're going to be saving the data\n        partition_dir &lt;- paste0(\"year=\", year, \"/month=\", month)\n        dest_dir &lt;- file.path(data_dir, partition_dir)\n        dest_file_path &lt;- file.path(dest_dir, \"part-0.parquet\")\n        \n        # If the file doesn't exist\n        if (!file.exists(dest_file_path)) {\n          \n          # Create the partition to store the data in\n          if(!dir.exists(dest_dir)){\n            dir.create(dest_dir, recursive = TRUE)\n          }\n           \n          # Work out where we are going to be retrieving the data from\n          source_path &lt;- file.path(bucket, \"nyc-taxi\", partition_dir, \"part-0.parquet\")\n          \n          # Download the data - save any error messages that occur\n          tryCatch(\n            download.file(source_path, dest_file_path, mode = \"wb\"),\n            error = function(e){\n              problems &lt;- c(problems, e$message)\n            }\n          )\n        }\n      }\n    }\n    \n    print(\"Downloads complete\")\n    \n    if(length(problems) &gt; 0){\n      warning(call. = FALSE, \"The following errors occurred during download:\\n\", paste(problems, collapse =  \"\\n\"))\n    }\n}\n\n\ndata_path &lt;- \"data/nyc-taxi\" # Or set your own preferred path\n\ndownload_via_https(data_path)\n\nOnce this has completed, you can check everything has downloaded correctly by calling:\n\nopen_dataset(data_path) |&gt;\n    nrow()\n\nIt might take a moment to run (the data has over a billion rows), but you should expect to see:\n[1] 1150352666\nIf you get an error message, your download may have been interrupted at some point. The error message will name the file which could not be read. Manually delete this file and run the nrow() code snippet again until you successfully load the data. You can then download any missing files by re-running download_via_https(data_path).\n\n\n\n2. Seattle Checkouts by Title Data\nThis is the data we use to explore some data storage and engineering options. It’s a good sized, single CSV file—9GB on-disk in total, which can be downloaded from the an AWS S3 bucket via https:\n\noptions(timeout = 1800)\ndownload.file(\n  url = \"https://r4ds.s3.us-west-2.amazonaws.com/seattle-library-checkouts.csv\",\n  destfile = \"data/seattle-library-checkouts.csv\"\n)"
-  },
-  {
-    "objectID": "setup.html#tiny-data-option",
-    "href": "setup.html#tiny-data-option",
-    "title": "Packages & Data",
-    "section": "Tiny Data Option",
-    "text": "Tiny Data Option\nIf you don’t have time or disk space to download the larger-than-memory datasets (and still have disk space do the exercises), you can run the code and exercises in the course with “tiny” versions of these data. Although the focus in this course is working with larger-than-memory data, you can still learn about the concepts and workflows with smaller data—although note you may not see the same performance improvements that you would get when working with larger data.\n\n1. Tiny NYC Taxi Data\nWe’ve created a “tiny” NYC Taxi dataset which contains only 1 in 1000 rows from the original dataset. So instead of working with 1.15 billion rows of data and about 40GB of files, the tiny taxi dataset is 1.15 million rows and about 50MB of files. You can download the tiny NYC Taxi data directly from this repo via https:\n\noptions(timeout = 1800)\ndownload.file(\n  url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/nyc-taxi-tiny.zip\",\n  destfile = \"data/nyc-taxi-tiny.zip\"\n)\n\n# Extract the partitioned parquet files from the zip folder:\nunzip(\n  zipfile = \"data/nyc-taxi-tiny.zip\", \n  exdir = \"data/\"\n)\n\n\n\n2. Tiny Seattle Checkouts by Title Data\nWe’ve created a “tiny” Seattle Checkouts by Title dataset which contains only 1 in 100 rows from the original dataset. So instead of working with ~41 million rows of data in a 9GB file, the tiny Seattle checkouts dataset is ~410 thousand rows and in an 90MB file. You can download the tiny Seattle Checkouts by Title data directly from this repo via https:\n\noptions(timeout = 1800)\ndownload.file(\n  url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/seattle-library-checkouts-tiny.csv\",\n  destfile = \"data/seattle-library-checkouts-tiny.csv\"\n)"
-  },
-  {
-    "objectID": "setup.html#both-data-options-everyone",
-    "href": "setup.html#both-data-options-everyone",
-    "title": "Packages & Data",
-    "section": "Both Data Options / Everyone",
-    "text": "Both Data Options / Everyone\n\n3. Taxi Zone Lookup CSV Table & Taxi Zone Shapefile\nYou can download the two NYC Taxi trip ancillary data files directly from this repo via https:\n\noptions(timeout = 1800)\ndownload.file(\n  url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/taxi_zone_lookup.csv\",\n  destfile = \"data/taxi_zone_lookup.csv\"\n)\n\ndownload.file(\n  url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/taxi_zones.zip\",\n  destfile = \"data/taxi_zones.zip\"\n)\n\n# Extract the spatial files from the zip folder:\nunzip(\n  zipfile = \"data/taxi_zones.zip\", \n  exdir = \"data/taxi_zones\"\n)"
-  },
-  {
-    "objectID": "materials/1_hello_arrow-exercises.html",
-    "href": "materials/1_hello_arrow-exercises.html",
-    "title": "Hello Arrow Exercises",
-    "section": "",
-    "text": "library(arrow)\nlibrary(dplyr)\n\n\nnyc_taxi &lt;- open_dataset(\"data/nyc-taxi/\")\n\n\n\n\n\n\n\nFirst dplyr pipeline with Arrow\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nCalculate the longest trip distance for every month in 2019\nHow long did this query take to run?\n\n\n\nLongest trip distance for every month in 2019:\n\nnyc_taxi |&gt; \n  filter(year == 2019) |&gt;\n  group_by(month) |&gt;\n  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |&gt;\n  arrange(month) |&gt; \n  collect()\n\n# A tibble: 12 × 2\n   month longest_trip\n   &lt;int&gt;        &lt;dbl&gt;\n 1     1         832.\n 2     2         702.\n 3     3         237.\n 4     4         831.\n 5     5         401.\n 6     6       45977.\n 7     7         312.\n 8     8         602.\n 9     9         604.\n10    10         308.\n11    11         701.\n12    12       19130.\n\n\n\n\nCompute time:\n\nlibrary(tictoc)\n\ntic()\nnyc_taxi |&gt; \n  filter(year == 2019) |&gt;\n  group_by(month) |&gt;\n  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |&gt;\n  arrange(month) |&gt; \n  collect()\n\n# A tibble: 12 × 2\n   month longest_trip\n   &lt;int&gt;        &lt;dbl&gt;\n 1     1         832.\n 2     2         702.\n 3     3         237.\n 4     4         831.\n 5     5         401.\n 6     6       45977.\n 7     7         312.\n 8     8         602.\n 9     9         604.\n10    10         308.\n11    11         701.\n12    12       19130.\n\ntoc()\n\n0.392 sec elapsed\n\n\nor\n\nnyc_taxi |&gt; \n  filter(year == 2019) |&gt;\n  group_by(month) |&gt;\n  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |&gt;\n  arrange(month) |&gt; \n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  2.565   0.148   0.376"
-  },
-  {
-    "objectID": "materials/2_data_manipulation_1-exercises.html",
-    "href": "materials/2_data_manipulation_1-exercises.html",
-    "title": "Data Manipulation Part 1 - Exercises",
-    "section": "",
-    "text": "library(arrow)\nlibrary(dplyr)\nlibrary(stringr)\n\n\nnyc_taxi &lt;- open_dataset(\"data/nyc-taxi/\")\n\n\n\n\n\n\n\nUsing collect() to run a query\n\n\n\n\nProblemsSolution 1\n\n\nUse the function nrow() to work out the answers to these questions:\n\nHow many taxi fares in the dataset had a total amount greater than $100?\n\n\n\n\nnyc_taxi |&gt;\n  filter(total_amount &gt; 100) |&gt;\n  nrow()\n\n[1] 1518869\n\n\n\n\n\n\n\n\n\n\n\n\n\nUsing the dplyr API in arrow\n\n\n\n\nProblemsSolution 1Solution 2 and 3\n\n\n\nUse the dplyr::filter() and stringr::str_ends() functions to return a subset of the data which is a) from September 2020, and b) the value in vendor_name ends with the letter “S”.\nTry to use the stringr function str_replace_na() to replace any NA values in the vendor_name column with the string “No vendor” instead. What happens, and why?\nBonus question: see if you can find a different way of completing the task in question 2.\n\n\n\n\nnyc_taxi |&gt;\n  filter(str_ends(vendor_name, \"S\"), year == 2020,  month == 9) |&gt;\n  collect()\n\n\n\n\nnyc_taxi |&gt;\n  mutate(vendor_name = stringr::str_replace_na(vendor_name, \"No vendor\")) |&gt;\n  head() |&gt;\n  collect()\n\nThis won’t work as stringr::str_replace_na() hasn’t been implemented in Arrow. You could try using mutate() and ifelse() here instead.\n\nnyc_taxi |&gt;\n  mutate(vendor_name = ifelse(is.na(vendor_name), \"No vendor\", vendor_name)) |&gt;\n  head() |&gt;\n  collect()\n\nOr, if you only needed a subset of the data, you could apply the function after collecting it into R memory.\n\nnyc_taxi |&gt;\n  filter(year == 2019, month == 10) |&gt; # smaller subset of the data\n  collect() |&gt;\n  mutate(vendor_name = stringr::str_replace_na(vendor_name, \"No vendor\"))"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2-exercises.html",
-    "href": "materials/4_data_manipulation_2-exercises.html",
-    "title": "Data Manipulation Part 2 - Exercises",
-    "section": "",
-    "text": "library(arrow)\nlibrary(dplyr)\nlibrary(duckdb)\n\n\nnyc_taxi &lt;- open_dataset(\"data/nyc-taxi/\")\n\n\n\n\n\n\n\nUser-defined functions\n\n\n\n\nProblemSolution 1\n\n\n\nWrite a user-defined function which wraps the stringr function str_replace_na(), and use it to replace any NA values in the vendor_name column with the string “No vendor” instead. (Test it on the data from 2019 so you’re not pulling everything into memory)\n\n\n\n\n# Preview the distinct vendor names before we start\nnyc_taxi |&gt;\n  filter(year == 2019) |&gt; # smaller subset of the data\n  distinct(vendor_name) |&gt;\n  collect()\n\n# A tibble: 3 × 1\n  vendor_name\n  &lt;chr&gt;      \n1 VTS        \n2 CMT        \n3 &lt;NA&gt;       \n\n\n\nregister_scalar_function(\n  name = \"replace_vendor_na\",\n  function(context, string) {\n    stringr::str_replace_na(string, \"No vendor\")\n  },\n  in_type = schema(string = string()),\n  out_type = string(),\n  auto_convert = TRUE\n)\n\nvendor_names_fixed &lt;- nyc_taxi |&gt;\n  mutate(vendor_name = replace_vendor_na(vendor_name)) \n\n# Preview the distinct vendor names to check it's worked\nvendor_names_fixed |&gt;\n  filter(year == 2019) |&gt; # smaller subset of the data\n  distinct(vendor_name) |&gt;\n  collect()\n\n# A tibble: 3 × 1\n  vendor_name\n  &lt;chr&gt;      \n1 CMT        \n2 VTS        \n3 No vendor  \n\n\n\n\n\n\n\n\n\n\n\n\n\nJoins\n\n\n\n\nProblemSolution 1\n\n\n\nHow many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? (Hint: you can use stringr::str_detect() to help you find pickup zones with the word “Airport” in them)\n\n\n\n\npickup_location &lt;- read_csv_arrow(\"data/taxi_zone_lookup.csv\")\n\npickup_location &lt;- pickup_location |&gt;\n  select(\n    pickup_location_id = LocationID,\n    borough = Borough,\n    pickup_zone = Zone\n  ) \n\n\npickup_location_arrow &lt;- arrow_table(\n  pickup_location, \n  schema = schema(\n    pickup_location_id = int64(),\n    borough = utf8(),\n    pickup_zone = utf8()\n  ))\n\nnyc_taxi |&gt;\n  filter(year == 2019) |&gt;\n  left_join(pickup_location_arrow) |&gt;\n  filter(str_detect(pickup_zone, \"Airport\")) |&gt;\n  count(pickup_zone) |&gt;\n  collect()\n\n# A tibble: 3 × 2\n  pickup_zone             n\n  &lt;chr&gt;               &lt;int&gt;\n1 LaGuardia Airport 2159224\n2 JFK Airport       2729336\n3 Newark Airport       8643"
-  },
-  {
-    "objectID": "materials/8_closing.html#feedback",
-    "href": "materials/8_closing.html#feedback",
-    "title": "Big Data in R with Arrow",
-    "section": "Feedback",
-    "text": "Feedback\n\nPlease complete the post-workshop survey 🙏\nYour feedback is crucial! Data from the survey informs curriculum and format decisions for future conf workshops, and we really appreciate you taking the time to provide it.\n\npos.it/conf-workshop-survey"
-  },
-  {
-    "objectID": "materials/8_closing.html#course-materials",
-    "href": "materials/8_closing.html#course-materials",
-    "title": "Big Data in R with Arrow",
-    "section": "Course Materials",
-    "text": "Course Materials\n\n\nhttps://github.com/posit-conf-2024/arrow\nmaterials open-licensed: Creative Commons Attribution 4.0 International License\nPlease open an Issue with any glitches, gotchas or comments!"
-  },
-  {
-    "objectID": "materials/8_closing.html#grab-a-sticker",
-    "href": "materials/8_closing.html#grab-a-sticker",
-    "title": "Big Data in R with Arrow",
-    "section": "Grab a sticker!",
-    "text": "Grab a sticker!\n\n\n\ngrab a hex sticker before you go!\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#section",
-    "href": "materials/0_housekeeping.html#section",
-    "title": "Big Data in R with Arrow",
-    "section": "",
-    "text": "WiFi \n\nUsername: Posit Conf 2024\nPassword: conf2024\n\n\nWorkshop \n\nWebsite: pos.it/arrow-conf24\nGitHub: github.com/posit-conf-2024/arrow"
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#housekeeping",
-    "href": "materials/0_housekeeping.html#housekeeping",
-    "title": "Big Data in R with Arrow",
-    "section": "Housekeeping",
-    "text": "Housekeeping\n\nGender Neutral Bathrooms \n\nLocated on levels 3, 4, 5, 6 & 7\n\nSpecialty Rooms \n\nMeditation/Prayer Room (503)\nLactation Room (509)\n\n*Available Mon & Tues 7am - 7pm, and Wed 7am - 5pm"
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#photos",
-    "href": "materials/0_housekeeping.html#photos",
-    "title": "Big Data in R with Arrow",
-    "section": "Photos",
-    "text": "Photos\n\nRed Lanyards  NO \n\nPlease note everyone’s lanyard colors before taking a photo and respect their choices."
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#code-of-conduct",
-    "href": "materials/0_housekeeping.html#code-of-conduct",
-    "title": "Big Data in R with Arrow",
-    "section": "Code of Conduct",
-    "text": "Code of Conduct\n\n posit.co/code-of-conduct/\n\nContact any posit::conf staff member, identifiable by their staff t-shirt, or visit the conference general information desk.\nSend a message to conf@posit.com; event organizers will respond promptly.\nCall +1-844-448-1212; this phone number will be monitored for the duration of the event."
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#meet-your-teaching-team",
-    "href": "materials/0_housekeeping.html#meet-your-teaching-team",
-    "title": "Big Data in R with Arrow",
-    "section": "Meet Your Teaching Team ",
-    "text": "Meet Your Teaching Team \n\nCo-Instructors\n\nNic Crane\nSteph Hazlitt\n\nTeaching Assistant\n\nJonathan Keane"
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#meet-each-other",
-    "href": "materials/0_housekeeping.html#meet-each-other",
-    "title": "Big Data in R with Arrow",
-    "section": "Meet Each Other ",
-    "text": "Meet Each Other \n\n\nWhen did you use R for the first time?\nWhat is your favorite R package?\nWhich package hex sticker would you like to find the most during posit::conf(2024)?"
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#getting-help-today",
-    "href": "materials/0_housekeeping.html#getting-help-today",
-    "title": "Big Data in R with Arrow",
-    "section": "Getting Help Today ",
-    "text": "Getting Help Today \n\nTEAL sticky note: I am OK / I am done\nPINK sticky note: I need support / I am working\n\n You can ask questions at any time during the workshop"
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#discord",
-    "href": "materials/0_housekeeping.html#discord",
-    "title": "Big Data in R with Arrow",
-    "section": "Discord ",
-    "text": "Discord \n\npos.it/conf-event-portal (login)\nClick on “Join Discord, the virtual networking platform!”\nBrowse Channels -&gt; #workshop-arrow"
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#we-assume",
-    "href": "materials/0_housekeeping.html#we-assume",
-    "title": "Big Data in R with Arrow",
-    "section": "We Assume",
-    "text": "We Assume\n\nYou know \nYou are familiar with the dplyr package for data manipulation \nYou have data in your life that is too large to fit into memory or sluggish in memory\nYou want to learn how to engineer your data storage for more performant access and analysis\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Big Data in R with Arrow",
-    "section": "",
-    "text": "by Nic Crane & Steph Hazlitt\n\n🗓️ August 12th, 2024\n⏰ 09:00 - 17:00\n🏨 ADD-ROOM\n✍️ pos.it/conf\n\n\nWorkshop Overview\nData analysis pipelines with larger-than-memory data are becoming more and more commonplace. In this workshop you will learn how to use Apache Arrow, a multi-language toolbox for working with larger-than-memory tabular data, to create seamless “big” data analysis pipelines with R.\nThe workshop will focus on using the the arrow R package—a mature R interface to Apache Arrow—to process larger-than-memory files and multi-file datasets with arrow using familiar dplyr syntax. You’ll learn to create and use interoperable data file formats like Parquet for efficient data storage and access, with data stored both on disk and in the cloud, and also how to exercise fine control over data types to avoid common large data pipeline problems. This workshop will provide a foundation for using Arrow, giving you access to a powerful suite of tools for performant analysis of larger-than-memory data in R.\nThis course is for you if you:\n\nwant to learn how to work with tabular data that is too large to fit in memory using existing R and tidyverse syntax implemented in Arrow\nwant to learn about Parquet and other file formats that are powerful alternatives to CSV files\nwant to learn how to engineer your tabular data storage for more performant access and analysis with Apache Arrow\n\n\n\nWorkshop Prework\nAll participants need to bring is a laptop that can connect to wifi. We will be using Posit Workbench to learn together—Workbench will be setup with all the software and data needed for the day. If you would prefer to run code locally on your own laptop, detailed instructions for software requirements and data sources are covered in Packages & Data.\n\n\nWorkshop Schedule\n“This schedule is more what you would call a ‘guideline’ than an actual schedule” — Barbossa, Pirates of the Caribbean\n\n\n\n\n\n\n\nTime\nActivity\n\n\n\n\n09:00 - 10:30\nSession 1: Hello Arrow + Data Manipulation with Arrow I\n\n\n10:30 - 11:00\nCoffee break\n\n\n11:00 - 12:30\nSession 2: Data Engineering with Arrow\n\n\n12:30 - 13:30\nLunch break\n\n\n13:30 - 15:00\nSession 3: Arrow In-Memory Workflows\n\n\n15:00 - 15:30\nCoffee break\n\n\n15:30 - 17:00\nSession 4: Data Manipulation with Arrow II + Wrapping Up\n\n\n\n\n\nInstructors\nNic Crane is an R consultant with a background in data science and software engineering. They are passionate about open source, and learning and teaching all things R. Nic is part of the core team that maintain the Arrow R package, and a co-author of “Scaling up with R and Arrow”, due to be published by CRC Press later this year.\nSteph Hazlitt is a data scientist, researcher and R enthusiast. She has spent the better part of her career wrangling data with R and supporting people and teams in creating and sharing data science-related products and open source software. Steph is the Director of Data Science Partnerships with BC Stats.\n\n\nAcknowledgements\nSome of this Big Data in R with Arrow workshop materials draw on other open-licensed teaching content which we would like to acknowledge:\n\nuseR!2022 virtual Larger-Than-Memory Data Workflows with Apache Arrow tutorial authored by Danielle Navarro\nR for Data Science (2e) written by Hadley Wickham, Mine Çetinkaya-Rundel, and Garrett Grolemund—with thanks to Danielle Navarro who contributed the initial version of the Arrow chapter\nHow to use Arrow to work with large CSV files? blog post by François Michonneau, which introduces the single vs multi-file API models for learning/teaching Arrow\nBig Data in R with Arrow 1-Day Posit::Conf (2023) Workshop by Steph Hazlitt & Nic Crane, an earlier version of this 1-day course.\n\n\n This work is licensed under a Creative Commons Attribution 4.0 International License."
-  },
-  {
-    "objectID": "license-web.html",
-    "href": "license-web.html",
-    "title": "License",
-    "section": "",
-    "text": "This work is licensed under a Creative Commons Attribution 4.0 International License."
-  },
-  {
-    "objectID": "materials/7_continue_learning.html#docs",
-    "href": "materials/7_continue_learning.html#docs",
-    "title": "Big Data in R with Arrow",
-    "section": "Docs",
-    "text": "Docs\n\nhttps://arrow.apache.org/docs/r/"
-  },
-  {
-    "objectID": "materials/7_continue_learning.html#cookbook",
-    "href": "materials/7_continue_learning.html#cookbook",
-    "title": "Big Data in R with Arrow",
-    "section": "Cookbook",
-    "text": "Cookbook\nhttps://arrow.apache.org/cookbook/r/"
-  },
-  {
-    "objectID": "materials/7_continue_learning.html#cheatsheet",
-    "href": "materials/7_continue_learning.html#cheatsheet",
-    "title": "Big Data in R with Arrow",
-    "section": "Cheatsheet",
-    "text": "Cheatsheet\n\nhttps://github.com/apache/arrow/blob/master/r/cheatsheet/arrow-cheatsheet.pdf"
-  },
-  {
-    "objectID": "materials/7_continue_learning.html#awesome-arrow",
-    "href": "materials/7_continue_learning.html#awesome-arrow",
-    "title": "Big Data in R with Arrow",
-    "section": "Awesome Arrow",
-    "text": "Awesome Arrow\nhttps://github.com/thisisnic/awesome-arrow-r"
-  },
-  {
-    "objectID": "materials/7_continue_learning.html#github-issues",
-    "href": "materials/7_continue_learning.html#github-issues",
-    "title": "Big Data in R with Arrow",
-    "section": "GitHub Issues",
-    "text": "GitHub Issues\nhttps://github.com/apache/arrow/issues"
-  },
-  {
-    "objectID": "materials/7_continue_learning.html#community",
-    "href": "materials/7_continue_learning.html#community",
-    "title": "Big Data in R with Arrow",
-    "section": "Community",
-    "text": "Community\nhttps://arrow.apache.org/community/\n\n\nalso Stack Overflow, Posit Community\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
-  },
-  {
-    "objectID": "materials/6_wrapping_up.html#arrow",
-    "href": "materials/6_wrapping_up.html#arrow",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow",
-    "text": "Arrow\n\nefficiently read + filter + join + summarise 1.15 billion rows\n\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(janitor)\nlibrary(stringr)\n\nnyc_taxi_zones &lt;- read_csv_arrow(\"data/taxi_zone_lookup.csv\",\n                                 as_data_frame = FALSE) |&gt;\n  clean_names()\n  \nairport_zones &lt;- nyc_taxi_zones |&gt;\n  filter(str_detect(zone, \"Airport\")) |&gt;\n  pull(location_id, as_vector = TRUE)\n\ndropoff_zones &lt;- nyc_taxi_zones |&gt;\n  select(dropoff_location_id = location_id,\n         dropoff_zone = zone) |&gt; \n  compute() # run the query and store as a temporary \n            # in-memory Arrow table, could also use \n            # collect(as_data_frame = FALSE) here\n\nairport_pickups &lt;- open_dataset(\"data/nyc-taxi/\") |&gt;\n  filter(pickup_location_id %in% airport_zones) |&gt;\n  select(\n    matches(\"datetime\"),\n    matches(\"location_id\")\n  ) |&gt;\n  left_join(dropoff_zones) |&gt;\n  count(dropoff_zone) |&gt;\n  arrange(desc(n)) |&gt;\n  collect()"
-  },
-  {
-    "objectID": "materials/6_wrapping_up.html#r",
-    "href": "materials/6_wrapping_up.html#r",
-    "title": "Big Data in R with Arrow",
-    "section": "R",
-    "text": "R\n\nread + wrangle spatial data + 🤩 graphics\n\n\nlibrary(sf)\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(stringr)\nlibrary(scales)\n\nmap &lt;- read_sf(\"data/taxi_zones/taxi_zones.shp\") |&gt;\n  clean_names() |&gt;\n  left_join(airport_pickups,\n            by = c(\"zone\" = \"dropoff_zone\")) |&gt;\n  arrange(desc(n))\n\narrow_r_together &lt;- ggplot(data = map, aes(fill = n)) +\n  geom_sf(size = .1) +\n  scale_fill_distiller(\n    name = \"Number of trips\",\n    labels = label_comma(),\n    palette = \"Reds\",\n    direction = 1\n  ) +\n  geom_label_repel(\n    stat = \"sf_coordinates\",\n    data = map |&gt;\n      mutate(zone_label = case_when(\n        str_detect(zone, \"Airport\") ~ zone,\n        str_detect(zone, \"Times\") ~ zone,\n        .default = \"\"\n      )),\n    mapping = aes(label = zone_label, geometry = geometry),\n    max.overlaps = 60,\n    label.padding = .3,\n    fill = \"white\"\n  ) +\n  theme_void()"
-  },
-  {
-    "objectID": "materials/6_wrapping_up.html#arrow-r-together-arrow",
-    "href": "materials/6_wrapping_up.html#arrow-r-together-arrow",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow + R Together: {arrow}",
-    "text": "Arrow + R Together: {arrow}\n\narrow_r_together\n\n\n\n\n\n\n\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
-  },
-  {
     "objectID": "materials/1_hello_arrow.html#poll-arrow",
     "href": "materials/1_hello_arrow.html#poll-arrow",
     "title": "Big Data in R with Arrow",
@@ -823,7 +970,7 @@
     "href": "materials/1_hello_arrow.html#what-is-apache-arrow",
     "title": "Big Data in R with Arrow",
     "section": "What is Apache Arrow?",
-    "text": "What is Apache Arrow?\n\n\n\nA multi-language toolbox for accelerated data interchange and in-memory processing\n\n\n\nArrow is designed to both improve the performance of analytical algorithms and the efficiency of moving data from one system or programming language to another\n\n\n\nhttps://arrow.apache.org/overview/"
+    "text": "What is Apache Arrow?\n\n\n\nA multi-language toolbox for accelerated data interchange and in-memory processing\n\n\n\nArrow is designed to both improve the performance of analytical algorithms and the efficiency of moving data from one system or programming language to another\n\n\n\n\nhttps://arrow.apache.org/overview/"
   },
   {
     "objectID": "materials/1_hello_arrow.html#apache-arrow-specification",
@@ -875,6 +1022,111 @@
     "text": "Today\n\nModule 1: Larger-than-memory data manipulation with Arrow—Part I\nModule 2: Data engineering with Arrow\nModule 3: In-memory workflows in R with Arrow\nModule 4: Larger-than-memory data manipulation with Arrow—Part II\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
   },
   {
+    "objectID": "materials/0_housekeeping.html#section",
+    "href": "materials/0_housekeeping.html#section",
+    "title": "Big Data in R with Arrow",
+    "section": "",
+    "text": "WiFi \n\nUsername: Posit Conf 2024\nPassword: conf2024\n\n\nWorkshop \n\nWebsite: pos.it/arrow-conf24\nGitHub: github.com/posit-conf-2024/arrow"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#housekeeping",
+    "href": "materials/0_housekeeping.html#housekeeping",
+    "title": "Big Data in R with Arrow",
+    "section": "Housekeeping",
+    "text": "Housekeeping\n\nGender Neutral Bathrooms \n\nLocated on levels 3, 4, 5, 6 & 7\n\nSpecialty Rooms \n\nMeditation/Prayer Room (503)\nLactation Room (509)\n\n*Available Mon & Tues 7am - 7pm, and Wed 7am - 5pm"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#photos",
+    "href": "materials/0_housekeeping.html#photos",
+    "title": "Big Data in R with Arrow",
+    "section": "Photos",
+    "text": "Photos\n\nRed Lanyards  NO \n\nPlease note everyone’s lanyard colors before taking a photo and respect their choices."
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#code-of-conduct",
+    "href": "materials/0_housekeeping.html#code-of-conduct",
+    "title": "Big Data in R with Arrow",
+    "section": "Code of Conduct",
+    "text": "Code of Conduct\n\n posit.co/code-of-conduct/\n\nContact any posit::conf staff member, identifiable by their staff t-shirt, or visit the conference general information desk.\nSend a message to conf@posit.com; event organizers will respond promptly.\nCall +1-844-448-1212; this phone number will be monitored for the duration of the event."
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#meet-your-teaching-team",
+    "href": "materials/0_housekeeping.html#meet-your-teaching-team",
+    "title": "Big Data in R with Arrow",
+    "section": "Meet Your Teaching Team ",
+    "text": "Meet Your Teaching Team \n\nCo-Instructors\n\nNic Crane\nSteph Hazlitt\n\nTeaching Assistant\n\nJonathan Keane"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#meet-each-other",
+    "href": "materials/0_housekeeping.html#meet-each-other",
+    "title": "Big Data in R with Arrow",
+    "section": "Meet Each Other ",
+    "text": "Meet Each Other \n\n\nWhen did you use R for the first time?\nWhat is your favorite R package?\nWhich package hex sticker would you like to find the most during posit::conf(2024)?"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#getting-help-today",
+    "href": "materials/0_housekeeping.html#getting-help-today",
+    "title": "Big Data in R with Arrow",
+    "section": "Getting Help Today ",
+    "text": "Getting Help Today \n\nTEAL sticky note: I am OK / I am done\nPINK sticky note: I need support / I am working\n\n You can ask questions at any time during the workshop"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#discord",
+    "href": "materials/0_housekeeping.html#discord",
+    "title": "Big Data in R with Arrow",
+    "section": "Discord ",
+    "text": "Discord \n\npos.it/conf-event-portal (login)\nClick on “Join Discord, the virtual networking platform!”\nBrowse Channels -&gt; #workshop-arrow"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#we-assume",
+    "href": "materials/0_housekeeping.html#we-assume",
+    "title": "Big Data in R with Arrow",
+    "section": "We Assume",
+    "text": "We Assume\n\nYou know \nYou are familiar with the dplyr package for data manipulation \nYou have data in your life that is too large to fit into memory or sluggish in memory\nYou want to learn how to engineer your data storage for more performant access and analysis\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Big Data in R with Arrow",
+    "section": "",
+    "text": "by Nic Crane & Steph Hazlitt\n\n🗓️ August 12th, 2024\n⏰ 09:00 - 17:00\n🏨 ADD-ROOM\n✍️ pos.it/conf\n\n\nWorkshop Overview\nData analysis pipelines with larger-than-memory data are becoming more and more commonplace. In this workshop you will learn how to use Apache Arrow, a multi-language toolbox for working with larger-than-memory tabular data, to create seamless “big” data analysis pipelines with R.\nThe workshop will focus on using the the arrow R package—a mature R interface to Apache Arrow—to process larger-than-memory files and multi-file datasets with arrow using familiar dplyr syntax. You’ll learn to create and use interoperable data file formats like Parquet for efficient data storage and access, with data stored both on disk and in the cloud, and also how to exercise fine control over data types to avoid common large data pipeline problems. This workshop will provide a foundation for using Arrow, giving you access to a powerful suite of tools for performant analysis of larger-than-memory data in R.\nThis course is for you if you:\n\nwant to learn how to work with tabular data that is too large to fit in memory using existing R and tidyverse syntax implemented in Arrow\nwant to learn about Parquet and other file formats that are powerful alternatives to CSV files\nwant to learn how to engineer your tabular data storage for more performant access and analysis with Apache Arrow\n\n\n\nWorkshop Prework\nAll participants need to bring is a laptop that can connect to wifi. We will be using Posit Workbench to learn together—Workbench will be setup with all the software and data needed for the day. If you would prefer to run code locally on your own laptop, detailed instructions for software requirements and data sources are covered in Packages & Data.\n\n\nWorkshop Schedule\n“This schedule is more what you would call a ‘guideline’ than an actual schedule” — Barbossa, Pirates of the Caribbean\n\n\n\n\n\n\n\nTime\nActivity\n\n\n\n\n09:00 - 10:30\nSession 1: Hello Arrow + Data Manipulation with Arrow I\n\n\n10:30 - 11:00\nCoffee break\n\n\n11:00 - 12:30\nSession 2: Data Engineering with Arrow\n\n\n12:30 - 13:30\nLunch break\n\n\n13:30 - 15:00\nSession 3: Arrow In-Memory Workflows\n\n\n15:00 - 15:30\nCoffee break\n\n\n15:30 - 17:00\nSession 4: Data Manipulation with Arrow II + Wrapping Up\n\n\n\n\n\nInstructors\nNic Crane is an R consultant with a background in data science and software engineering. They are passionate about open source, and learning and teaching all things R. Nic is part of the core team that maintain the Arrow R package, and a co-author of “Scaling up with R and Arrow”, due to be published by CRC Press later this year.\nSteph Hazlitt is a data scientist, researcher and R enthusiast. She has spent the better part of her career wrangling data with R and supporting people and teams in creating and sharing data science-related products and open source software. Steph is the Director of Data Science Partnerships with BC Stats.\n\n\nAcknowledgements\nSome of this Big Data in R with Arrow workshop materials draw on other open-licensed teaching content which we would like to acknowledge:\n\nuseR!2022 virtual Larger-Than-Memory Data Workflows with Apache Arrow tutorial authored by Danielle Navarro\nR for Data Science (2e) written by Hadley Wickham, Mine Çetinkaya-Rundel, and Garrett Grolemund—with thanks to Danielle Navarro who contributed the initial version of the Arrow chapter\nHow to use Arrow to work with large CSV files? blog post by François Michonneau, which introduces the single vs multi-file API models for learning/teaching Arrow\nBig Data in R with Arrow 1-Day Posit::Conf (2023) Workshop by Steph Hazlitt & Nic Crane, an earlier version of this 1-day course.\n\n\n This work is licensed under a Creative Commons Attribution 4.0 International License."
+  },
+  {
+    "objectID": "license-web.html",
+    "href": "license-web.html",
+    "title": "License",
+    "section": "",
+    "text": "This work is licensed under a Creative Commons Attribution 4.0 International License."
+  },
+  {
+    "objectID": "materials/1_hello_arrow-exercises.html",
+    "href": "materials/1_hello_arrow-exercises.html",
+    "title": "Hello Arrow Exercises",
+    "section": "",
+    "text": "library(arrow)\nlibrary(dplyr)\n\n\nnyc_taxi &lt;- open_dataset(\"data/nyc-taxi/\")\n\n\n\n\n\n\n\nFirst dplyr pipeline with Arrow\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nCalculate the longest trip distance for every month in 2019\nHow long did this query take to run?\n\n\n\nLongest trip distance for every month in 2019:\n\nnyc_taxi |&gt; \n  filter(year == 2019) |&gt;\n  group_by(month) |&gt;\n  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |&gt;\n  arrange(month) |&gt; \n  collect()\n\n# A tibble: 12 × 2\n   month longest_trip\n   &lt;int&gt;        &lt;dbl&gt;\n 1     1         832.\n 2     2         702.\n 3     3         237.\n 4     4         831.\n 5     5         401.\n 6     6       45977.\n 7     7         312.\n 8     8         602.\n 9     9         604.\n10    10         308.\n11    11         701.\n12    12       19130.\n\n\n\n\nCompute time:\n\nlibrary(tictoc)\n\ntic()\nnyc_taxi |&gt; \n  filter(year == 2019) |&gt;\n  group_by(month) |&gt;\n  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |&gt;\n  arrange(month) |&gt; \n  collect()\n\n# A tibble: 12 × 2\n   month longest_trip\n   &lt;int&gt;        &lt;dbl&gt;\n 1     1         832.\n 2     2         702.\n 3     3         237.\n 4     4         831.\n 5     5         401.\n 6     6       45977.\n 7     7         312.\n 8     8         602.\n 9     9         604.\n10    10         308.\n11    11         701.\n12    12       19130.\n\ntoc()\n\n0.392 sec elapsed\n\n\nor\n\nnyc_taxi |&gt; \n  filter(year == 2019) |&gt;\n  group_by(month) |&gt;\n  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |&gt;\n  arrange(month) |&gt; \n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  2.565   0.148   0.376"
+  },
+  {
+    "objectID": "materials/2_data_manipulation_1-exercises.html",
+    "href": "materials/2_data_manipulation_1-exercises.html",
+    "title": "Data Manipulation Part 1 - Exercises",
+    "section": "",
+    "text": "library(arrow)\nlibrary(dplyr)\nlibrary(stringr)\n\n\nnyc_taxi &lt;- open_dataset(\"data/nyc-taxi/\")\n\n\n\n\n\n\n\nUsing collect() to run a query\n\n\n\n\nProblemsSolution 1\n\n\nUse the function nrow() to work out the answers to these questions:\n\nHow many taxi fares in the dataset had a total amount greater than $100?\n\n\n\n\nnyc_taxi |&gt;\n  filter(total_amount &gt; 100) |&gt;\n  nrow()\n\n[1] 1518869\n\n\n\n\n\n\n\n\n\n\n\n\n\nUsing the dplyr API in arrow\n\n\n\n\nProblemsSolution 1Solution 2 and 3\n\n\n\nUse the dplyr::filter() and stringr::str_ends() functions to return a subset of the data which is a) from September 2020, and b) the value in vendor_name ends with the letter “S”.\nTry to use the stringr function str_replace_na() to replace any NA values in the vendor_name column with the string “No vendor” instead. What happens, and why?\nBonus question: see if you can find a different way of completing the task in question 2.\n\n\n\n\nnyc_taxi |&gt;\n  filter(str_ends(vendor_name, \"S\"), year == 2020,  month == 9) |&gt;\n  collect()\n\n\n\n\nnyc_taxi |&gt;\n  mutate(vendor_name = stringr::str_replace_na(vendor_name, \"No vendor\")) |&gt;\n  head() |&gt;\n  collect()\n\nThis won’t work as stringr::str_replace_na() hasn’t been implemented in Arrow. You could try using mutate() and ifelse() here instead.\n\nnyc_taxi |&gt;\n  mutate(vendor_name = ifelse(is.na(vendor_name), \"No vendor\", vendor_name)) |&gt;\n  head() |&gt;\n  collect()\n\nOr, if you only needed a subset of the data, you could apply the function after collecting it into R memory.\n\nnyc_taxi |&gt;\n  filter(year == 2019, month == 10) |&gt; # smaller subset of the data\n  collect() |&gt;\n  mutate(vendor_name = stringr::str_replace_na(vendor_name, \"No vendor\"))"
+  },
+  {
+    "objectID": "materials/3_data_engineering-exercises.html",
+    "href": "materials/3_data_engineering-exercises.html",
+    "title": "Data Engineering with Arrow Exercises",
+    "section": "",
+    "text": "Schemas\n\nlibrary(arrow)\nlibrary(dplyr)\n\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n                            format = \"csv\")\n\n\n\n\n\n\n\nData Types & Controlling the Schema\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nThe first few thousand rows of ISBN are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with open_dataset() and ensure the correct data type for ISBN is &lt;string&gt; (or the alias &lt;utf8&gt;) instead of the &lt;null&gt; interpreted by Arrow.\nOnce you have a Dataset object with the metadata you are after, count the number of Checkouts by CheckoutYear and arrange the result by CheckoutYear.\n\n\n\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  schema(\n    UsageClass = utf8(),\n    CheckoutType = utf8(),\n    MaterialType = utf8(),\n    CheckoutYear = int64(),\n    CheckoutMonth = int64(),\n    Checkouts = int64(),\n    Title = utf8(),\n    ISBN = string(), #or utf8()\n    Creator = utf8(),\n    Subjects = utf8(),\n    Publisher = utf8(),\n    PublicationYear = utf8()\n  ),\n    skip = 1,\n)\n\nor\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  col_types = schema(ISBN = string()) # or utf8()\n)\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: string\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string\n\n\n\n\nThe number of Checkouts by CheckoutYear arranged by CheckoutYear:\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect()\n\n# A tibble: 18 × 2\n   CheckoutYear `sum(Checkouts)`\n          &lt;int&gt;            &lt;int&gt;\n 1         2005          3798685\n 2         2006          6599318\n 3         2007          7126627\n 4         2008          8438486\n 5         2009          9135167\n 6         2010          8608966\n 7         2011          8321732\n 8         2012          8163046\n 9         2013          9057096\n10         2014          9136081\n11         2015          9084179\n12         2016          9021051\n13         2017          9231648\n14         2018          9149176\n15         2019          9199083\n16         2020          6053717\n17         2021          7361031\n18         2022          7001989\n\n\nor\n\nseattle_csv |&gt; \n  count(CheckoutYear, wt = Checkouts) |&gt; \n  arrange(CheckoutYear) |&gt; \n  collect()\n\n# A tibble: 18 × 2\n   CheckoutYear       n\n          &lt;int&gt;   &lt;int&gt;\n 1         2005 3798685\n 2         2006 6599318\n 3         2007 7126627\n 4         2008 8438486\n 5         2009 9135167\n 6         2010 8608966\n 7         2011 8321732\n 8         2012 8163046\n 9         2013 9057096\n10         2014 9136081\n11         2015 9084179\n12         2016 9021051\n13         2017 9231648\n14         2018 9149176\n15         2019 9199083\n16         2020 6053717\n17         2021 7361031\n18         2022 7001989\n\n\nTiming the query:\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n 10.651   1.091  10.333 \n\n\nQuerying 42 million rows of data stored in a CSV on disk in ~10 seconds, not too bad.\n\n\n\n\n\n\n\nParquet\n\nseattle_parquet &lt;- \"data/seattle-library-checkouts-parquet\"\n\nseattle_csv |&gt;\n  write_dataset(path = seattle_parquet,\n                format = \"parquet\")\n\n\n\n\n\n\n\nParquet\n\n\n\n\nProblemSolution 1\n\n\n\nRe-run the query counting the number of Checkouts by CheckoutYear and arranging the result by CheckoutYear, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?\n\n\n\n\nseattle_parquet &lt;- \"data/seattle-library-checkouts-parquet\"\n\nopen_dataset(sources = seattle_parquet, \n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  1.634   0.345   0.558 \n\n\nA much faster compute time for the query when the on-disk data is stored in the Parquet format.\n\n\n\n\n\n\n\nPartitioning\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  write_dataset(path = seattle_parquet_part,\n                format = \"parquet\")\n\n\n\n\n\n\n\nPartitioning\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nLet’s write the Seattle Checkout CSV data to a multi-file dataset just one more time! This time, write the data partitioned by CheckoutType as Parquet files.\nNow compare the compute time between our Parquet data partitioned by CheckoutYear and our Parquet data partitioned by CheckoutType with a query of the total number of checkouts in September of 2019. Did you find a difference in compute time?\n\n\n\nWriting the data:\n\nseattle_checkouttype &lt;- \"data/seattle-library-checkouts-type\"\n\nseattle_csv |&gt;\n  group_by(CheckoutType) |&gt;\n  write_dataset(path = seattle_checkouttype,\n                format = \"parquet\")\n\n\n\nTotal number of Checkouts in September of 2019 using partitioned Parquet data by CheckoutType:\n\nopen_dataset(sources = \"data/seattle-library-checkouts-type\") |&gt; \n  filter(CheckoutYear == 2019, CheckoutMonth == 9) |&gt; \n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.777   0.072   0.296 \n\n\nTotal number of Checkouts in September of 2019 using partitioned Parquet data by CheckoutYear and CheckoutMonth:\n\nopen_dataset(\"data/seattle-library-checkouts\") |&gt; \n  filter(CheckoutYear == 2019, CheckoutMonth == 9) |&gt; \n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.034   0.005   0.030 \n\n\nFaster compute time because the filter() call is based on the partitions."
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2-exercises.html",
+    "href": "materials/4_data_manipulation_2-exercises.html",
+    "title": "Data Manipulation Part 2 - Exercises",
+    "section": "",
+    "text": "library(arrow)\nlibrary(dplyr)\nlibrary(duckdb)\n\n\nnyc_taxi &lt;- open_dataset(\"data/nyc-taxi/\")\n\n\n\n\n\n\n\nUser-defined functions\n\n\n\n\nProblemSolution 1\n\n\n\nWrite a user-defined function which wraps the stringr function str_replace_na(), and use it to replace any NA values in the vendor_name column with the string “No vendor” instead. (Test it on the data from 2019 so you’re not pulling everything into memory)\n\n\n\n\n# Preview the distinct vendor names before we start\nnyc_taxi |&gt;\n  filter(year == 2019) |&gt; # smaller subset of the data\n  distinct(vendor_name) |&gt;\n  collect()\n\n# A tibble: 3 × 1\n  vendor_name\n  &lt;chr&gt;      \n1 VTS        \n2 CMT        \n3 &lt;NA&gt;       \n\n\n\nregister_scalar_function(\n  name = \"replace_vendor_na\",\n  function(context, string) {\n    stringr::str_replace_na(string, \"No vendor\")\n  },\n  in_type = schema(string = string()),\n  out_type = string(),\n  auto_convert = TRUE\n)\n\nvendor_names_fixed &lt;- nyc_taxi |&gt;\n  mutate(vendor_name = replace_vendor_na(vendor_name)) \n\n# Preview the distinct vendor names to check it's worked\nvendor_names_fixed |&gt;\n  filter(year == 2019) |&gt; # smaller subset of the data\n  distinct(vendor_name) |&gt;\n  collect()\n\n# A tibble: 3 × 1\n  vendor_name\n  &lt;chr&gt;      \n1 CMT        \n2 VTS        \n3 No vendor  \n\n\n\n\n\n\n\n\n\n\n\n\n\nJoins\n\n\n\n\nProblemSolution 1\n\n\n\nHow many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? (Hint: you can use stringr::str_detect() to help you find pickup zones with the word “Airport” in them)\n\n\n\n\npickup_location &lt;- read_csv_arrow(\"data/taxi_zone_lookup.csv\")\n\npickup_location &lt;- pickup_location |&gt;\n  select(\n    pickup_location_id = LocationID,\n    borough = Borough,\n    pickup_zone = Zone\n  ) \n\n\npickup_location_arrow &lt;- arrow_table(\n  pickup_location, \n  schema = schema(\n    pickup_location_id = int64(),\n    borough = utf8(),\n    pickup_zone = utf8()\n  ))\n\nnyc_taxi |&gt;\n  filter(year == 2019) |&gt;\n  left_join(pickup_location_arrow) |&gt;\n  filter(str_detect(pickup_zone, \"Airport\")) |&gt;\n  count(pickup_zone) |&gt;\n  collect()\n\n# A tibble: 3 × 2\n  pickup_zone             n\n  &lt;chr&gt;               &lt;int&gt;\n1 LaGuardia Airport 2159224\n2 JFK Airport       2729336\n3 Newark Airport       8643"
+  },
+  {
     "objectID": "materials/5_arrow_single_file-exercises.html",
     "href": "materials/5_arrow_single_file-exercises.html",
     "title": "Arrow In-Memory Exercise",
@@ -882,297 +1134,45 @@
     "text": "library(arrow)\nlibrary(dplyr)\n\n\n\n\n\n\n\nArrow Table\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nRead in a single NYC Taxi parquet file using read_parquet() as an Arrow Table\nConvert your Arrow Table object to a data.frame or a tibble\n\n\n\n\nparquet_file &lt;- \"data/nyc-taxi/year=2019/month=9/part-0.parquet\"\n\ntaxi_table &lt;- read_parquet(parquet_file, as_data_frame = FALSE)\ntaxi_table\n\nTable\n6567396 rows x 22 columns\n$vendor_name &lt;string&gt;\n$pickup_datetime &lt;timestamp[ms]&gt;\n$dropoff_datetime &lt;timestamp[ms]&gt;\n$passenger_count &lt;int64&gt;\n$trip_distance &lt;double&gt;\n$pickup_longitude &lt;double&gt;\n$pickup_latitude &lt;double&gt;\n$rate_code &lt;string&gt;\n$store_and_fwd &lt;string&gt;\n$dropoff_longitude &lt;double&gt;\n$dropoff_latitude &lt;double&gt;\n$payment_type &lt;string&gt;\n$fare_amount &lt;double&gt;\n$extra &lt;double&gt;\n$mta_tax &lt;double&gt;\n$tip_amount &lt;double&gt;\n$tolls_amount &lt;double&gt;\n$total_amount &lt;double&gt;\n$improvement_surcharge &lt;double&gt;\n$congestion_surcharge &lt;double&gt;\n...\n2 more columns\nUse `schema()` to see entire schema\n\n\n\n\n\ntaxi_table |&gt; collect()\n\n# A tibble: 6,567,396 × 22\n   vendor_name pickup_datetime     dropoff_datetime    passenger_count\n   &lt;chr&gt;       &lt;dttm&gt;              &lt;dttm&gt;                        &lt;int&gt;\n 1 VTS         2019-09-01 06:14:09 2019-09-01 06:31:52               2\n 2 VTS         2019-09-01 06:36:17 2019-09-01 07:12:44               1\n 3 VTS         2019-09-01 06:29:19 2019-09-01 06:54:13               1\n 4 CMT         2019-09-01 06:33:09 2019-09-01 06:52:14               2\n 5 VTS         2019-09-01 06:57:43 2019-09-01 07:26:21               1\n 6 CMT         2019-09-01 06:59:16 2019-09-01 07:28:12               1\n 7 CMT         2019-09-01 06:20:06 2019-09-01 06:52:19               1\n 8 CMT         2019-09-01 06:27:54 2019-09-01 06:32:56               0\n 9 CMT         2019-09-01 06:35:08 2019-09-01 06:55:51               0\n10 CMT         2019-09-01 06:19:37 2019-09-01 06:30:52               1\n# ℹ 6,567,386 more rows\n# ℹ 18 more variables: trip_distance &lt;dbl&gt;, pickup_longitude &lt;dbl&gt;,\n#   pickup_latitude &lt;dbl&gt;, rate_code &lt;chr&gt;, store_and_fwd &lt;chr&gt;,\n#   dropoff_longitude &lt;dbl&gt;, dropoff_latitude &lt;dbl&gt;, payment_type &lt;chr&gt;,\n#   fare_amount &lt;dbl&gt;, extra &lt;dbl&gt;, mta_tax &lt;dbl&gt;, tip_amount &lt;dbl&gt;,\n#   tolls_amount &lt;dbl&gt;, total_amount &lt;dbl&gt;, improvement_surcharge &lt;dbl&gt;,\n#   congestion_surcharge &lt;dbl&gt;, pickup_location_id &lt;int&gt;, …\n\n\nor\n\nas_tibble(taxi_table)\n\n# A tibble: 6,567,396 × 22\n   vendor_name pickup_datetime     dropoff_datetime    passenger_count\n   &lt;chr&gt;       &lt;dttm&gt;              &lt;dttm&gt;                        &lt;int&gt;\n 1 VTS         2019-09-01 06:14:09 2019-09-01 06:31:52               2\n 2 VTS         2019-09-01 06:36:17 2019-09-01 07:12:44               1\n 3 VTS         2019-09-01 06:29:19 2019-09-01 06:54:13               1\n 4 CMT         2019-09-01 06:33:09 2019-09-01 06:52:14               2\n 5 VTS         2019-09-01 06:57:43 2019-09-01 07:26:21               1\n 6 CMT         2019-09-01 06:59:16 2019-09-01 07:28:12               1\n 7 CMT         2019-09-01 06:20:06 2019-09-01 06:52:19               1\n 8 CMT         2019-09-01 06:27:54 2019-09-01 06:32:56               0\n 9 CMT         2019-09-01 06:35:08 2019-09-01 06:55:51               0\n10 CMT         2019-09-01 06:19:37 2019-09-01 06:30:52               1\n# ℹ 6,567,386 more rows\n# ℹ 18 more variables: trip_distance &lt;dbl&gt;, pickup_longitude &lt;dbl&gt;,\n#   pickup_latitude &lt;dbl&gt;, rate_code &lt;chr&gt;, store_and_fwd &lt;chr&gt;,\n#   dropoff_longitude &lt;dbl&gt;, dropoff_latitude &lt;dbl&gt;, payment_type &lt;chr&gt;,\n#   fare_amount &lt;dbl&gt;, extra &lt;dbl&gt;, mta_tax &lt;dbl&gt;, tip_amount &lt;dbl&gt;,\n#   tolls_amount &lt;dbl&gt;, total_amount &lt;dbl&gt;, improvement_surcharge &lt;dbl&gt;,\n#   congestion_surcharge &lt;dbl&gt;, pickup_location_id &lt;int&gt;, …\n\n\nor\n\nas.data.frame(taxi_table)\n\n  vendor_name     pickup_datetime    dropoff_datetime passenger_count\n1         VTS 2019-09-01 06:14:09 2019-09-01 06:31:52               2\n2         VTS 2019-09-01 06:36:17 2019-09-01 07:12:44               1\n3         VTS 2019-09-01 06:29:19 2019-09-01 06:54:13               1\n4         CMT 2019-09-01 06:33:09 2019-09-01 06:52:14               2\n5         VTS 2019-09-01 06:57:43 2019-09-01 07:26:21               1\n  trip_distance pickup_longitude pickup_latitude     rate_code store_and_fwd\n1          9.62               NA              NA Standard rate            No\n2         26.09               NA              NA Standard rate            No\n3          7.61               NA              NA Standard rate            No\n4          3.30               NA              NA Standard rate            No\n5         18.87               NA              NA Standard rate            No\n  dropoff_longitude dropoff_latitude payment_type fare_amount extra mta_tax\n1                NA               NA         Cash        27.0   0.5     0.5\n2                NA               NA  Credit card        68.5   0.5     0.5\n3                NA               NA         Cash        25.5   0.5     0.5\n4                NA               NA  Credit card        15.0   3.0     0.5\n5                NA               NA         Cash        51.5   0.5     0.5\n  tip_amount tolls_amount total_amount improvement_surcharge\n1       0.00         6.12        36.92                   0.3\n2      23.23        20.62       116.15                   0.3\n3       0.00         0.00        26.80                   0.3\n4       0.00         0.00        18.80                   0.3\n5       0.00         0.00        52.80                   0.3\n  congestion_surcharge pickup_location_id dropoff_location_id\n1                  2.5                186                 138\n2                  2.5                138                   1\n3                  0.0                132                 203\n4                  2.5                 79                  50\n5                  0.0                132                  97\n [ reached 'max' / getOption(\"max.print\") -- omitted 6567391 rows ]"
   },
   {
-    "objectID": "materials/5_arrow_single_file.html#arrow",
-    "href": "materials/5_arrow_single_file.html#arrow",
+    "objectID": "materials/6_wrapping_up.html#arrow",
+    "href": "materials/6_wrapping_up.html#arrow",
     "title": "Big Data in R with Arrow",
-    "section": "arrow 📦",
-    "text": "arrow 📦"
+    "section": "Arrow",
+    "text": "Arrow\n\nefficiently read + filter + join + summarise 1.15 billion rows\n\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(janitor)\nlibrary(stringr)\n\nnyc_taxi_zones &lt;- read_csv_arrow(\"data/taxi_zone_lookup.csv\",\n                                 as_data_frame = FALSE) |&gt;\n  clean_names()\n  \nairport_zones &lt;- nyc_taxi_zones |&gt;\n  filter(str_detect(zone, \"Airport\")) |&gt;\n  pull(location_id, as_vector = TRUE)\n\ndropoff_zones &lt;- nyc_taxi_zones |&gt;\n  select(dropoff_location_id = location_id,\n         dropoff_zone = zone) |&gt; \n  collect(as_data_frame = FALSE)\n\nairport_pickups &lt;- open_dataset(\"data/nyc-taxi/\") |&gt;\n  filter(pickup_location_id %in% airport_zones) |&gt;\n  select(\n    matches(\"datetime\"),\n    matches(\"location_id\")\n  ) |&gt;\n  left_join(dropoff_zones) |&gt;\n  count(dropoff_zone) |&gt;\n  arrange(desc(n)) |&gt;\n  collect()"
   },
   {
-    "objectID": "materials/5_arrow_single_file.html#arrow-single-files",
-    "href": "materials/5_arrow_single_file.html#arrow-single-files",
+    "objectID": "materials/6_wrapping_up.html#r",
+    "href": "materials/6_wrapping_up.html#r",
     "title": "Big Data in R with Arrow",
-    "section": "Arrow & Single Files",
-    "text": "Arrow & Single Files\n\nlibrary(arrow)\n\nread_parquet()\nread_csv_arrow()\nread_feather()\nread_json_arrow()\n\nValue: tibble (the default), or an Arrow Table if as_data_frame = FALSE — both in-memory"
+    "section": "R",
+    "text": "R\n\nread + wrangle spatial data + 🤩 graphics\n\n\nlibrary(sf)\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(stringr)\nlibrary(scales)\n\nmap &lt;- read_sf(\"data/taxi_zones/taxi_zones.shp\") |&gt;\n  clean_names() |&gt;\n  left_join(airport_pickups,\n            by = c(\"zone\" = \"dropoff_zone\")) |&gt;\n  arrange(desc(n))\n\narrow_r_together &lt;- ggplot(data = map, aes(fill = n)) +\n  geom_sf(size = .1) +\n  scale_fill_distiller(\n    name = \"Number of trips\",\n    labels = label_comma(),\n    palette = \"Reds\",\n    direction = 1\n  ) +\n  geom_label_repel(\n    stat = \"sf_coordinates\",\n    data = map |&gt;\n      mutate(zone_label = case_when(\n        str_detect(zone, \"Airport\") ~ zone,\n        str_detect(zone, \"Times\") ~ zone,\n        .default = \"\"\n      )),\n    mapping = aes(label = zone_label, geometry = geometry),\n    max.overlaps = 60,\n    label.padding = .3,\n    fill = \"white\"\n  ) +\n  theme_void()"
   },
   {
-    "objectID": "materials/5_arrow_single_file.html#your-turn",
-    "href": "materials/5_arrow_single_file.html#your-turn",
+    "objectID": "materials/6_wrapping_up.html#arrow-r-together-arrow",
+    "href": "materials/6_wrapping_up.html#arrow-r-together-arrow",
     "title": "Big Data in R with Arrow",
-    "section": "Your Turn",
-    "text": "Your Turn\n\nRead in a single NYC Taxi parquet file using read_parquet() as an Arrow Table\nConvert your Arrow Table object to a data.frame or a tibble"
+    "section": "Arrow + R Together: {arrow}",
+    "text": "Arrow + R Together: {arrow}\n\narrow_r_together\n\n\n\n\n\n\n\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
   },
   {
-    "objectID": "materials/5_arrow_single_file.html#read-a-parquet-file-tibble",
-    "href": "materials/5_arrow_single_file.html#read-a-parquet-file-tibble",
+    "objectID": "materials/8_closing.html#feedback",
+    "href": "materials/8_closing.html#feedback",
     "title": "Big Data in R with Arrow",
-    "section": "Read a Parquet File (tibble)",
-    "text": "Read a Parquet File (tibble)\n\nlibrary(arrow)\n\nparquet_file &lt;- \"data/nyc-taxi/year=2019/month=9/part-0.parquet\"\n\ntaxi_df &lt;- read_parquet(file = parquet_file)\ntaxi_df\n\n# A tibble: 6,567,396 × 22\n   vendor_name pickup_datetime     dropoff_datetime    passenger_count\n   &lt;chr&gt;       &lt;dttm&gt;              &lt;dttm&gt;                        &lt;int&gt;\n 1 VTS         2019-09-01 06:14:09 2019-09-01 06:31:52               2\n 2 VTS         2019-09-01 06:36:17 2019-09-01 07:12:44               1\n 3 VTS         2019-09-01 06:29:19 2019-09-01 06:54:13               1\n 4 CMT         2019-09-01 06:33:09 2019-09-01 06:52:14               2\n 5 VTS         2019-09-01 06:57:43 2019-09-01 07:26:21               1\n 6 CMT         2019-09-01 06:59:16 2019-09-01 07:28:12               1\n 7 CMT         2019-09-01 06:20:06 2019-09-01 06:52:19               1\n 8 CMT         2019-09-01 06:27:54 2019-09-01 06:32:56               0\n 9 CMT         2019-09-01 06:35:08 2019-09-01 06:55:51               0\n10 CMT         2019-09-01 06:19:37 2019-09-01 06:30:52               1\n# ℹ 6,567,386 more rows\n# ℹ 18 more variables: trip_distance &lt;dbl&gt;, pickup_longitude &lt;dbl&gt;,\n#   pickup_latitude &lt;dbl&gt;, rate_code &lt;chr&gt;, store_and_fwd &lt;chr&gt;,\n#   dropoff_longitude &lt;dbl&gt;, dropoff_latitude &lt;dbl&gt;, payment_type &lt;chr&gt;,\n#   fare_amount &lt;dbl&gt;, extra &lt;dbl&gt;, mta_tax &lt;dbl&gt;, tip_amount &lt;dbl&gt;,\n#   tolls_amount &lt;dbl&gt;, total_amount &lt;dbl&gt;, improvement_surcharge &lt;dbl&gt;,\n#   congestion_surcharge &lt;dbl&gt;, pickup_location_id &lt;int&gt;, …"
+    "section": "Feedback",
+    "text": "Feedback\n\nPlease complete the post-workshop survey 🙏\nYour feedback is crucial! Data from the survey informs curriculum and format decisions for future conf workshops, and we really appreciate you taking the time to provide it.\n\npos.it/conf-workshop-survey"
   },
   {
-    "objectID": "materials/5_arrow_single_file.html#read-a-parquet-file-table",
-    "href": "materials/5_arrow_single_file.html#read-a-parquet-file-table",
+    "objectID": "materials/8_closing.html#course-materials",
+    "href": "materials/8_closing.html#course-materials",
     "title": "Big Data in R with Arrow",
-    "section": "Read a Parquet File (Table)",
-    "text": "Read a Parquet File (Table)\n\ntaxi_table &lt;- read_parquet(file = parquet_file, as_data_frame = FALSE)\ntaxi_table\n\nTable\n6567396 rows x 22 columns\n$vendor_name &lt;string&gt;\n$pickup_datetime &lt;timestamp[ms]&gt;\n$dropoff_datetime &lt;timestamp[ms]&gt;\n$passenger_count &lt;int64&gt;\n$trip_distance &lt;double&gt;\n$pickup_longitude &lt;double&gt;\n$pickup_latitude &lt;double&gt;\n$rate_code &lt;string&gt;\n$store_and_fwd &lt;string&gt;\n$dropoff_longitude &lt;double&gt;\n$dropoff_latitude &lt;double&gt;\n$payment_type &lt;string&gt;\n$fare_amount &lt;double&gt;\n$extra &lt;double&gt;\n$mta_tax &lt;double&gt;\n$tip_amount &lt;double&gt;\n$tolls_amount &lt;double&gt;\n$total_amount &lt;double&gt;\n$improvement_surcharge &lt;double&gt;\n$congestion_surcharge &lt;double&gt;\n...\n2 more columns\nUse `schema()` to see entire schema"
+    "section": "Course Materials",
+    "text": "Course Materials\n\n\nhttps://github.com/posit-conf-2024/arrow\nmaterials open-licensed: Creative Commons Attribution 4.0 International License\nPlease open an Issue with any glitches, gotchas or comments!"
   },
   {
-    "objectID": "materials/5_arrow_single_file.html#tibble---table---data.frame",
-    "href": "materials/5_arrow_single_file.html#tibble---table---data.frame",
+    "objectID": "materials/8_closing.html#grab-a-sticker",
+    "href": "materials/8_closing.html#grab-a-sticker",
     "title": "Big Data in R with Arrow",
-    "section": "tibble <-> Table <-> data.frame",
-    "text": "tibble &lt;-&gt; Table &lt;-&gt; data.frame\n\nlibrary(dplyr)\n\n#change a df to a table\narrow_table(taxi_df)\n\n#change a table to a tibble\ntaxi_table |&gt; collect()\nas_tibble(taxi_table)\n\n#change a table to a data.frame\nas.data.frame(taxi_table)\n\n\n\ndata.frame & tibble are R objects in-memory\nTable is an Arrow object in-memory"
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#data-frames",
-    "href": "materials/5_arrow_single_file.html#data-frames",
-    "title": "Big Data in R with Arrow",
-    "section": "Data frames",
-    "text": "Data frames"
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#arrow-tables",
-    "href": "materials/5_arrow_single_file.html#arrow-tables",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow Tables",
-    "text": "Arrow Tables\n\n\nArrow Tables are collections of chunked arrays"
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#table-dataset-a-dplyr-pipeline",
-    "href": "materials/5_arrow_single_file.html#table-dataset-a-dplyr-pipeline",
-    "title": "Big Data in R with Arrow",
-    "section": "Table | Dataset: A dplyr pipeline",
-    "text": "Table | Dataset: A dplyr pipeline\n\nparquet_file |&gt;\n  read_parquet(as_data_frame = FALSE) |&gt;\n  group_by(vendor_name) |&gt;\n  summarise(all_trips = n(),\n            shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect()\n\n# A tibble: 3 × 4\n  vendor_name all_trips shared_trips pct_shared\n  &lt;chr&gt;           &lt;int&gt;        &lt;int&gt;      &lt;dbl&gt;\n1 VTS           4238808      1339478       31.6\n2 CMT           2294473       470344       20.5\n3 &lt;NA&gt;            34115            0        0  \n\n\n\nFunctions available in Arrow dplyr queries: https://arrow.apache.org/docs/r/reference/acero.html\n\nAll the same capabilities as you practiced with Arrow Dataset"
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#arrow-for-efficient-in-memory-processing",
-    "href": "materials/5_arrow_single_file.html#arrow-for-efficient-in-memory-processing",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow for Efficient In-Memory Processing",
-    "text": "Arrow for Efficient In-Memory Processing\n\nparquet_file |&gt;\n  read_parquet() |&gt;\n  nrow()\n\n[1] 6567396\n\n\n\n\nparquet_file |&gt;\n  read_parquet() |&gt;\n  group_by(vendor_name) |&gt;\n  summarise(all_trips = n(),\n            shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  2.214   0.575   0.814"
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#arrow-for-efficient-in-memory-processing-1",
-    "href": "materials/5_arrow_single_file.html#arrow-for-efficient-in-memory-processing-1",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow for Efficient In-Memory Processing",
-    "text": "Arrow for Efficient In-Memory Processing\n\nparquet_file |&gt;\n  read_parquet(as_data_frame = FALSE) |&gt;\n  nrow()\n\n[1] 6567396\n\n\n\n\nparquet_file |&gt;\n  read_parquet(as_data_frame = FALSE) |&gt;\n  group_by(vendor_name) |&gt;\n  summarise(all_trips = n(),\n            shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  1.995   0.343   0.366"
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#read-a-parquet-file-selectively",
-    "href": "materials/5_arrow_single_file.html#read-a-parquet-file-selectively",
-    "title": "Big Data in R with Arrow",
-    "section": "Read a Parquet File Selectively",
-    "text": "Read a Parquet File Selectively\n\nparquet_file |&gt;\n  read_parquet(\n    col_select = c(\"vendor_name\", \"passenger_count\"),\n    as_data_frame = FALSE\n  )\n\nTable\n6567396 rows x 2 columns\n$vendor_name &lt;string&gt;\n$passenger_count &lt;int64&gt;"
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#selective-reads-are-faster",
-    "href": "materials/5_arrow_single_file.html#selective-reads-are-faster",
-    "title": "Big Data in R with Arrow",
-    "section": "Selective Reads Are Faster",
-    "text": "Selective Reads Are Faster\n\nparquet_file |&gt;\n  read_parquet(\n    col_select = c(\"vendor_name\", \"passenger_count\"),\n    as_data_frame = FALSE\n  ) |&gt; \n  group_by(vendor_name) |&gt;\n  summarise(all_trips = n(),\n            shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect() |&gt;\n  system.time()\n\n   user  system elapsed \n  0.323   0.088   0.234 \n\n\n\nNotes: row-based format readers often allow you to specify which columns to read in but the entire row must be read in and the unwanted columns discarded. Parquet’s columnar format allows you to read in only the columns you need, which is faster when you only need a subset of the data."
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#arrow-table-or-dataset",
-    "href": "materials/5_arrow_single_file.html#arrow-table-or-dataset",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow Table or Dataset?",
-    "text": "Arrow Table or Dataset?\n\n\nhttps://francoismichonneau.net/2022/10/import-big-csv/"
-  },
-  {
-    "objectID": "materials/5_arrow_single_file.html#arrow-for-improving-those-sluggish-worklows",
-    "href": "materials/5_arrow_single_file.html#arrow-for-improving-those-sluggish-worklows",
-    "title": "Big Data in R with Arrow",
-    "section": "Arrow for Improving Those Sluggish Worklows",
-    "text": "Arrow for Improving Those Sluggish Worklows\n\na “drop-in” for many dplyr workflows (Arrow Table or Dataset)\nworks when your tabular data get too big for your RAM (Arrow Dataset)\nprovides tools for re-engineering data storage for better performance (arrow::write_dataset())\n\n\nLot’s of ways to speed up sluggish workflows e.g. writing more performant tidyverse code, use other data frame libraries like data.table or polars, use duckDB or other databases, Spark + splarklyr … However, Arrow offers some attractive features for tackling this challenge, especially for dplyr users.\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
-  },
-  {
-    "objectID": "materials/3_data_engineering-exercises.html",
-    "href": "materials/3_data_engineering-exercises.html",
-    "title": "Data Engineering with Arrow Exercises",
-    "section": "",
-    "text": "Schemas\n\nlibrary(arrow)\nlibrary(dplyr)\n\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\"\n)\n\n\n\n\n\n\n\nData Types & Controlling the Schema\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nThe first few thousand rows of ISBN are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with open_dataset() and ensure the correct data type for ISBN is &lt;string&gt; (or the alias &lt;utf8&gt;) instead of the &lt;null&gt; interpreted by Arrow.\nOnce you have a Dataset object with the metadata you are after, count the number of Checkouts by CheckoutYear and arrange the result by CheckoutYear.\n\n\n\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  skip = 1,\n  schema(\n    UsageClass = utf8(),\n    CheckoutType = utf8(),\n    MaterialType = utf8(),\n    CheckoutYear = int64(),\n    CheckoutMonth = int64(),\n    Checkouts = int64(),\n    Title = utf8(),\n    ISBN = string(), #or utf8()\n    Creator = utf8(),\n    Subjects = utf8(),\n    Publisher = utf8(),\n    PublicationYear = utf8()\n  )\n)\n\nor\n\nseattle_csv &lt;- open_dataset(sources = \"data/seattle-library-checkouts.csv\",\n  format = \"csv\",\n  col_types = schema(ISBN = string()) #utf8()\n)\nseattle_csv\n\nFileSystemDataset with 1 csv file\n12 columns\nUsageClass: string\nCheckoutType: string\nMaterialType: string\nCheckoutYear: int64\nCheckoutMonth: int64\nCheckouts: int64\nTitle: string\nISBN: string\nCreator: string\nSubjects: string\nPublisher: string\nPublicationYear: string\n\n\n\n\nThe number of Checkouts by CheckoutYear arranged by CheckoutYear:\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect()\n\n# A tibble: 18 × 2\n   CheckoutYear `sum(Checkouts)`\n          &lt;int&gt;            &lt;int&gt;\n 1         2005          3798685\n 2         2006          6599318\n 3         2007          7126627\n 4         2008          8438486\n 5         2009          9135167\n 6         2010          8608966\n 7         2011          8321732\n 8         2012          8163046\n 9         2013          9057096\n10         2014          9136081\n11         2015          9084179\n12         2016          9021051\n13         2017          9231648\n14         2018          9149176\n15         2019          9199083\n16         2020          6053717\n17         2021          7361031\n18         2022          7001989\n\n\nor\n\nseattle_csv |&gt; \n  count(CheckoutYear, wt = Checkouts) |&gt; \n  arrange(CheckoutYear) |&gt; \n  collect()\n\n# A tibble: 18 × 2\n   CheckoutYear       n\n          &lt;int&gt;   &lt;int&gt;\n 1         2005 3798685\n 2         2006 6599318\n 3         2007 7126627\n 4         2008 8438486\n 5         2009 9135167\n 6         2010 8608966\n 7         2011 8321732\n 8         2012 8163046\n 9         2013 9057096\n10         2014 9136081\n11         2015 9084179\n12         2016 9021051\n13         2017 9231648\n14         2018 9149176\n15         2019 9199083\n16         2020 6053717\n17         2021 7361031\n18         2022 7001989\n\n\nTiming the query:\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n 11.474   1.084  11.003 \n\n\nQuerying 42 million rows of data stored in a CSV on disk in ~10 seconds, not too bad.\n\n\n\n\n\n\n\nParquet\n\nseattle_parquet &lt;- \"data/seattle-library-checkouts-parquet\"\n\nseattle_csv |&gt;\n  write_dataset(path = seattle_parquet,\n                format = \"parquet\")\n\n\n\n\n\n\n\nParquet\n\n\n\n\nProblemSolution 1\n\n\n\nRe-run the query counting the number of Checkouts by CheckoutYear and arranging the result by CheckoutYear, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?\n\n\n\n\nseattle_parquet &lt;- \"data/seattle-library-checkouts-parquet\"\n\nopen_dataset(sources = seattle_parquet, \n             format = \"parquet\") |&gt;\n  group_by(CheckoutYear) |&gt;\n  summarise(sum(Checkouts)) |&gt;\n  arrange(CheckoutYear) |&gt; \n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  2.076   0.287   0.646 \n\n\nA much faster compute time for the query when the on-disk data is stored in the Parquet format.\n\n\n\n\n\n\n\nPartitioning\n\nseattle_parquet_part &lt;- \"data/seattle-library-checkouts\"\n\nseattle_csv |&gt;\n  group_by(CheckoutYear) |&gt;\n  write_dataset(path = seattle_parquet_part,\n                format = \"parquet\")\n\n\n\n\n\n\n\nPartitioning\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nLet’s write the Seattle Checkout CSV data to a multi-file dataset just one more time! This time, write the data partitioned by CheckoutType as Parquet files.\nNow compare the compute time between our Parquet data partitioned by CheckoutYear and our Parquet data partitioned by CheckoutType with a query of the total number of checkouts in September of 2019. Did you find a difference in compute time?\n\n\n\nWriting the data:\n\nseattle_checkouttype &lt;- \"data/seattle-library-checkouts-type\"\n\nseattle_csv |&gt;\n  group_by(CheckoutType) |&gt;\n  write_dataset(path = seattle_checkouttype,\n                format = \"parquet\")\n\n\n\nTotal number of Checkouts in September of 2019 using partitioned Parquet data by CheckoutType:\n\nopen_dataset(sources = \"data/seattle-library-checkouts-type\") |&gt; \n  filter(CheckoutYear == 2019, CheckoutMonth == 9) |&gt; \n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.965   0.160   0.409 \n\n\nTotal number of Checkouts in September of 2019 using partitioned Parquet data by CheckoutYear and CheckoutMonth:\n\nopen_dataset(\"data/seattle-library-checkouts\") |&gt; \n  filter(CheckoutYear == 2019, CheckoutMonth == 9) |&gt; \n  summarise(TotalCheckouts = sum(Checkouts)) |&gt;\n  collect() |&gt; \n  system.time()\n\n   user  system elapsed \n  0.058   0.006   0.052 \n\n\nFaster compute time because the filter() call is based on the partitions."
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#what-if-a-function-binding-doesnt-exist---revisited",
-    "href": "materials/4_data_manipulation_2.html#what-if-a-function-binding-doesnt-exist---revisited",
-    "title": "Big Data in R with Arrow",
-    "section": "What if a function binding doesn’t exist - revisited!",
-    "text": "What if a function binding doesn’t exist - revisited!\n\nOption 1 - find a workaround\nOption 2 - user-defined functions (UDFs)"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#why-use-a-udf",
-    "href": "materials/4_data_manipulation_2.html#why-use-a-udf",
-    "title": "Big Data in R with Arrow",
-    "section": "Why use a UDF?",
-    "text": "Why use a UDF?\n\nIf no bindings for a function exist\nImplement your own custom functions\nRun in R not Arrow"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#how-do-function-bindings-usually-work",
-    "href": "materials/4_data_manipulation_2.html#how-do-function-bindings-usually-work",
-    "title": "Big Data in R with Arrow",
-    "section": "How do function bindings usually work?",
-    "text": "How do function bindings usually work?\n ## How do UDFs work?\n\n\ntime_diff_minutes &lt;- function(pickup, dropoff){\n  difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n}\n\nnyc_taxi |&gt;\n  mutate(\n    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)\n  ) |&gt; \n  select(pickup_datetime, dropoff_datetime, duration_minutes) |&gt;\n  head() |&gt;\n  collect()\n\nError: Expression time_diff_minutes(pickup_datetime, dropoff_datetime) not supported in Arrow\nCall collect() first to pull data into R.\n\n\nWe get an error as we can’t automatically convert the function to arrow."
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition",
-    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition",
-    "title": "Big Data in R with Arrow",
-    "section": "User-defined functions - definition",
-    "text": "User-defined functions - definition\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)\n\nThis looks complicated, so let’s look at it 1 part at a time!"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-1",
-    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-1",
-    "title": "Big Data in R with Arrow",
-    "section": "User-defined functions - definition",
-    "text": "User-defined functions - definition\nStep 1. Give the function a name\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-2",
-    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-2",
-    "title": "Big Data in R with Arrow",
-    "section": "User-defined functions - definition",
-    "text": "User-defined functions - definition\nStep 2. Define the body of the function - first argument must be context\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-3",
-    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-3",
-    "title": "Big Data in R with Arrow",
-    "section": "User-defined functions - definition",
-    "text": "User-defined functions - definition\nStep 3. Set the schema of the input arguments\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-4",
-    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-4",
-    "title": "Big Data in R with Arrow",
-    "section": "User-defined functions - definition",
-    "text": "User-defined functions - definition\nStep 4. Set the data type of the output\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition-5",
-    "href": "materials/4_data_manipulation_2.html#user-defined-functions---definition-5",
-    "title": "Big Data in R with Arrow",
-    "section": "User-defined functions - definition",
-    "text": "User-defined functions - definition\nStep 5. Set auto_convert = TRUE if using in a dplyr pipeline\n\nregister_scalar_function(\n  name = \"time_diff_minutes\",\n  function(context, pickup, dropoff) {\n    difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n  },\n  in_type = schema(\n    pickup = timestamp(unit = \"ms\"),\n    dropoff = timestamp(unit = \"ms\")\n  ),\n  out_type = int32(),\n  auto_convert = TRUE\n)"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---usage",
-    "href": "materials/4_data_manipulation_2.html#user-defined-functions---usage",
-    "title": "Big Data in R with Arrow",
-    "section": "User-defined functions - usage",
-    "text": "User-defined functions - usage\n\nnyc_taxi |&gt;\n  mutate(\n    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)\n  ) |&gt;\n  select(pickup_datetime, dropoff_datetime, duration_minutes) |&gt;\n  head() |&gt;\n  collect()\n\n# A tibble: 6 × 3\n  pickup_datetime     dropoff_datetime    duration_minutes\n  &lt;dttm&gt;              &lt;dttm&gt;                         &lt;int&gt;\n1 2012-10-07 18:19:00 2012-10-07 18:29:00               10\n2 2012-10-07 18:19:00 2012-10-07 18:33:00               14\n3 2012-10-07 18:19:00 2012-10-07 18:35:00               16\n4 2012-10-07 18:19:00 2012-10-07 18:35:00               16\n5 2012-10-07 18:19:00 2012-10-07 18:42:00               23\n6 2012-10-07 18:19:00 2012-10-07 18:43:00               24"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#your-turn",
-    "href": "materials/4_data_manipulation_2.html#your-turn",
-    "title": "Big Data in R with Arrow",
-    "section": "Your Turn",
-    "text": "Your Turn\n\nWrite a user-defined function which wraps the stringr function str_replace_na(), and use it to replace any NA values in the vendor_name column with the string “No vendor” instead. (Test it on the data from 2019 so you’re not pulling everything into memory)\n\n➡️ Data Manipulation Part II Exercises Page"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#summary",
-    "href": "materials/4_data_manipulation_2.html#summary",
-    "title": "Big Data in R with Arrow",
-    "section": "Summary",
-    "text": "Summary\n\nYou can use UDFs to create your own bindings when they don’t exist\nUDFs must be scalar (1 row in -&gt; 1 row out) and stateless (no knowledge of other rows of data)\nCalculations done by R not Arrow, so slower than in-built bindings but still pretty fast"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#joins-1",
-    "href": "materials/4_data_manipulation_2.html#joins-1",
-    "title": "Big Data in R with Arrow",
-    "section": "Joins",
-    "text": "Joins"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#joining-a-reference-table",
-    "href": "materials/4_data_manipulation_2.html#joining-a-reference-table",
-    "title": "Big Data in R with Arrow",
-    "section": "Joining a reference table",
-    "text": "Joining a reference table\n\nvendors &lt;- tibble::tibble(\n  code = c(\"VTS\", \"CMT\", \"DDS\"),\n  full_name = c(\n    \"Verifone Transportation Systems\",\n    \"Creative Mobile Technologies\",\n    \"Digital Dispatch Systems\"\n  )\n)\n\nnyc_taxi |&gt;\n  left_join(vendors, by = c(\"vendor_name\" = \"code\")) |&gt;\n  select(vendor_name, full_name, pickup_datetime) |&gt;\n  head(3) |&gt;\n  collect()\n\n# A tibble: 3 × 3\n  vendor_name full_name                    pickup_datetime    \n  &lt;chr&gt;       &lt;chr&gt;                        &lt;dttm&gt;             \n1 CMT         Creative Mobile Technologies 2012-10-07 17:26:40\n2 CMT         Creative Mobile Technologies 2012-10-07 17:26:52\n3 CMT         Creative Mobile Technologies 2012-10-07 17:26:57"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#traps-for-the-unwary",
-    "href": "materials/4_data_manipulation_2.html#traps-for-the-unwary",
-    "title": "Big Data in R with Arrow",
-    "section": "Traps for the unwary",
-    "text": "Traps for the unwary\nQuestion: which are the most common borough-to-borough journeys in the dataset?\n\nnyc_taxi_zones &lt;- \n  read_csv_arrow(\"data/taxi_zone_lookup.csv\") |&gt;\n  select(location_id = LocationID,\n         borough = Borough)\n\nnyc_taxi_zones\n\n# A tibble: 265 × 2\n   location_id borough      \n         &lt;int&gt; &lt;chr&gt;        \n 1           1 EWR          \n 2           2 Queens       \n 3           3 Bronx        \n 4           4 Manhattan    \n 5           5 Staten Island\n 6           6 Staten Island\n 7           7 Queens       \n 8           8 Queens       \n 9           9 Queens       \n10          10 Queens       \n# ℹ 255 more rows"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#why-didnt-this-work",
-    "href": "materials/4_data_manipulation_2.html#why-didnt-this-work",
-    "title": "Big Data in R with Arrow",
-    "section": "Why didn’t this work?",
-    "text": "Why didn’t this work?\n\nnyc_taxi |&gt;\n  left_join(nyc_taxi_zones, by = c(\"pickup_location_id\" = \"location_id\")) |&gt;\n  collect()\n\nError in `compute.arrow_dplyr_query()`:\n! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(location_id) of type int32"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#schema-for-the-nyc_taxi-dataset",
-    "href": "materials/4_data_manipulation_2.html#schema-for-the-nyc_taxi-dataset",
-    "title": "Big Data in R with Arrow",
-    "section": "Schema for the nyc_taxi Dataset",
-    "text": "Schema for the nyc_taxi Dataset\n\nschema(nyc_taxi)\n\nSchema\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#schema-for-the-nyc_taxi_zones-table",
-    "href": "materials/4_data_manipulation_2.html#schema-for-the-nyc_taxi_zones-table",
-    "title": "Big Data in R with Arrow",
-    "section": "Schema for the nyc_taxi_zones Table",
-    "text": "Schema for the nyc_taxi_zones Table\n\nnyc_taxi_zones_arrow &lt;- arrow_table(nyc_taxi_zones)\nschema(nyc_taxi_zones_arrow)\n\nSchema\nlocation_id: int32\nborough: string\n\n\n\npickup_location_id is int64 in the nyc_taxi table\nlocation_id is int32 in the nyc_taxi_zones table"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#take-control-of-the-schema",
-    "href": "materials/4_data_manipulation_2.html#take-control-of-the-schema",
-    "title": "Big Data in R with Arrow",
-    "section": "Take control of the schema",
-    "text": "Take control of the schema\n\nnyc_taxi_zones_arrow &lt;- arrow_table(\n  nyc_taxi_zones, \n  schema = schema(location_id = int64(), borough = utf8())\n)\n\n\nschema() takes variable name / types as input\narrow has various “type” functions: int64(), utf8(), boolean(), date32() etc"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#take-control-of-the-schema-1",
-    "href": "materials/4_data_manipulation_2.html#take-control-of-the-schema-1",
-    "title": "Big Data in R with Arrow",
-    "section": "Take control of the schema",
-    "text": "Take control of the schema\n\nnyc_taxi_zones_arrow &lt;- arrow_table(\n  nyc_taxi_zones, \n  schema = schema(location_id = int64(), borough = utf8())\n)\nschema(nyc_taxi_zones_arrow)\n\nSchema\nlocation_id: int64\nborough: string"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#prepare-the-auxiliary-tables",
-    "href": "materials/4_data_manipulation_2.html#prepare-the-auxiliary-tables",
-    "title": "Big Data in R with Arrow",
-    "section": "Prepare the auxiliary tables",
-    "text": "Prepare the auxiliary tables\n\npickup &lt;- nyc_taxi_zones_arrow |&gt;\n  select(pickup_location_id = location_id,\n         pickup_borough = borough)\n\ndropoff &lt;- nyc_taxi_zones_arrow |&gt;\n  select(dropoff_location_id = location_id,\n         dropoff_borough = borough)\n\n\nJoin separately for the pickup and dropoff zones"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#join-and-cross-tabulate",
-    "href": "materials/4_data_manipulation_2.html#join-and-cross-tabulate",
-    "title": "Big Data in R with Arrow",
-    "section": "Join and cross-tabulate",
-    "text": "Join and cross-tabulate\n\nlibrary(tictoc)\n\ntic()\nborough_counts &lt;- nyc_taxi |&gt; \n  left_join(pickup) |&gt;\n  left_join(dropoff) |&gt;\n  count(pickup_borough, dropoff_borough) |&gt;\n  arrange(desc(n)) |&gt;\n  collect()\ntoc()\n\n163.966 sec elapsed\n\n\n\n2-3 minutes to join twice and cross-tabulate on non-partition variables, with 1.15 billion rows of data 🙂"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#the-results",
-    "href": "materials/4_data_manipulation_2.html#the-results",
-    "title": "Big Data in R with Arrow",
-    "section": "The results",
-    "text": "The results\n\nborough_counts\n\n# A tibble: 50 × 3\n   pickup_borough dropoff_borough         n\n   &lt;chr&gt;          &lt;chr&gt;               &lt;int&gt;\n 1 &lt;NA&gt;           &lt;NA&gt;            732357953\n 2 Manhattan      Manhattan       351198872\n 3 Queens         Manhattan        14440705\n 4 Manhattan      Queens           13052517\n 5 Manhattan      Brooklyn         11180867\n 6 Queens         Queens            7440356\n 7 Unknown        Unknown           4491811\n 8 Queens         Brooklyn          3662324\n 9 Brooklyn       Brooklyn          3550480\n10 Manhattan      Bronx             2071830\n# ℹ 40 more rows"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#your-turn-1",
-    "href": "materials/4_data_manipulation_2.html#your-turn-1",
-    "title": "Big Data in R with Arrow",
-    "section": "Your Turn",
-    "text": "Your Turn\n\nHow many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? (Hint: you can use stringr::str_detect() to help you find pickup zones with the word “Airport” in them)\n\n➡️ Data Manipulation Part II Exercises Page"
-  },
-  {
-    "objectID": "materials/4_data_manipulation_2.html#summary-1",
-    "href": "materials/4_data_manipulation_2.html#summary-1",
-    "title": "Big Data in R with Arrow",
-    "section": "Summary",
-    "text": "Summary\n\nYou can join Arrow Tables and Datasets to R data frames and Arrow Tables\nThe Arrow data type of join keys must always match\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
-  },
-  {
-    "objectID": "materials/3_data_engineering.html#partitions-na-values-1",
-    "href": "materials/3_data_engineering.html#partitions-na-values-1",
-    "title": "Big Data in R with Arrow",
-    "section": "Partitions & NA Values",
-    "text": "Partitions & NA Values\nCustom:\n\npartition_na_custom_path &lt;- \"data/na-partition-custom\"\n\nwrite_dataset(starwars,\n              partition_na_custom_path,\n              partitioning = hive_partition(hair_color = string(),\n                                            null_fallback = \"no_color\"))\n\nlist.files(partition_na_custom_path)\n\n [1] \"hair_color=auburn\"            \"hair_color=auburn%2C%20grey\" \n [3] \"hair_color=auburn%2C%20white\" \"hair_color=black\"            \n [5] \"hair_color=blond\"             \"hair_color=blonde\"           \n [7] \"hair_color=brown\"             \"hair_color=brown%2C%20grey\"  \n [9] \"hair_color=grey\"              \"hair_color=no_color\"         \n[11] \"hair_color=none\"              \"hair_color=white\""
+    "section": "Grab a sticker!",
+    "text": "Grab a sticker!\n\n\n\ngrab a hex sticker before you go!\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
   }
 ]
