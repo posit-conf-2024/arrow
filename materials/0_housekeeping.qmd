@@ -110,3 +110,10 @@ Please note everyone’s lanyard colors before taking a photo and respect their 
 -   You are familiar with the [dplyr](https://dplyr.tidyverse.org/) package for data manipulation `r fontawesome::fa("screwdriver-wrench")`
 -   You have data in your life that is too large to fit into memory or sluggish in memory
 -   You want to learn how to engineer your data storage for more performant access and analysis
+
+## Setup
+
+- Log onto Workbench at the following URL: <add on conf day>
+- Create a new session; **select "Resource Profile: Large"**
+- Run `usethis::use_course("posit-conf-2024/arrow")`
+- Open `data/setup.R` and run the script
