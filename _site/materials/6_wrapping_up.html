@@ -417,7 +417,7 @@
 <span id="cb1-14"><a></a>dropoff_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span></span>
 <span id="cb1-15"><a></a>  <span class="fu">select</span>(<span class="at">dropoff_location_id =</span> location_id,</span>
 <span id="cb1-16"><a></a>         <span class="at">dropoff_zone =</span> zone) <span class="sc">|&gt;</span> </span>
-<span id="cb1-17"><a></a>  <span class="fu">compute</span>() <span class="co"># run the query but don't pull results into R session</span></span>
+<span id="cb1-17"><a></a>  <span class="fu">collect</span>(<span class="at">as_data_frame =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb1-18"><a></a></span>
 <span id="cb1-19"><a></a>airport_pickups <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"data/nyc-taxi/"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb1-20"><a></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">%in%</span> airport_zones) <span class="sc">|&gt;</span></span>

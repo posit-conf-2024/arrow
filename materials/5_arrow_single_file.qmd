@@ -89,6 +89,29 @@ as.data.frame(taxi_table)
 -   `data.frame` & `tibble` are R objects *in-memory*
 -   `Table` is an Arrow object *in-memory*
 
+## Watch Your Schemas 👀
+
+
+:::: {.columns}
+
+::: {.column width="50%"}
+```{r}
+#| label: check-schema-df
+
+schema(taxi_df)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| label: check-schema-table
+
+schema(taxi_table)
+```
+:::
+
+::::
+
 ## Data frames
 
 ![](images/tabular-structures-r.png)

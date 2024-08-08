@@ -59,7 +59,6 @@ seattle_parquet_part <- "data/seattle-library-checkouts"
 - 3️⃣ Parquet (.parquet)
 - 4️⃣ Something else
 
-
 ## Arrow & File Formats
 
 ![](images/arrow-read-write-updated.png)
@@ -85,7 +84,7 @@ library(dplyr)
 
 
 seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
-               format = "csv")
+                            format = "csv")
 seattle_csv
 ```
 
@@ -191,10 +190,9 @@ Schema defines column names and types, so we need to skip the first row (skip = 
 
 ```{r}
 #| label: seattle-schema-control
-#| code-line-numbers: "|12"
+#| code-line-numbers: "|11|17"
 seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
   format = "csv",
-  skip = 1,
   schema = schema(
     UsageClass = utf8(),
     CheckoutType = utf8(),
@@ -208,7 +206,8 @@ seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
     Subjects = utf8(),
     Publisher = utf8(),
     PublicationYear = utf8()
-  )
+  ),
+    skip = 1,
 )
 seattle_csv
 ```
@@ -230,7 +229,7 @@ seattle_csv
 
 ## Your Turn
 
-1.  The first few thousand rows of `ISBN` are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with `open_dataset()` and ensure the correct data type for `ISBN` is `<string>` instead of the `<null>` interpreted by Arrow.
+1.  The first few thousand rows of `ISBN` are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with `open_dataset()` and ensure the correct data type for `ISBN` is `<string>` (or the alias `<utf8>`) instead of the `<null>` interpreted by Arrow.
 
 2.  Once you have a `Dataset` object with the metadata you are after, count the number of `Checkouts` by `CheckoutYear` and arrange the result by `CheckoutYear`.
 
@@ -270,7 +269,6 @@ seattle_csv |>
 <https://parquet.apache.org/>
 :::
 
-
 ## Parquet Files: "row-chunked"
 
 ![](images/parquet-chunking.png)
@@ -289,7 +287,6 @@ seattle_csv |>
 -   efficient encodings to keep file size down, and supports file compression, less data to move from disk to memory
 -   CSV has no info about data types, inferred by each parser
 :::
-
 
 ## Writing to Parquet
 
@@ -438,11 +435,6 @@ open_dataset(sources = seattle_parquet_part,
 
 ➡️ [Data Storage Engineering Exercises Page](3_data_engineering-exercises.html)
 
-
-## Partitions & NA Values
-
-ADD content
-
 ## Partition Design
 
 ::: columns
@@ -455,6 +447,35 @@ ADD content
 ![](images/partitions.png){.absolute top="0"}
 :::
 :::
+
+## Partitions & NA Values
+
+Default:
+
+```{r}
+partition_na_default_path <- "data/na-partition-default"
+
+write_dataset(starwars,
+              partition_na_default_path,
+              partitioning = "hair_color")
+
+list.files(partition_na_default_path)
+```
+
+## Partitions & NA Values
+
+Custom:
+
+```{r}
+partition_na_custom_path <- "data/na-partition-custom"
+
+write_dataset(starwars,
+              partition_na_custom_path,
+              partitioning = hive_partition(hair_color = string(),
+                                            null_fallback = "no_color"))
+
+list.files(partition_na_custom_path)
+```
 
 ## Performance Review: Single CSV
 

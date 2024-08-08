@@ -19,8 +19,7 @@ library(dplyr)
 #| label: open-dataset-seattle-csv
 
 seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
-  format = "csv"
-)
+                            format = "csv")
 ```
 
 ::: {#exercise-schema .callout-tip}
@@ -41,7 +40,6 @@ seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
 
 seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
   format = "csv",
-  skip = 1,
   schema(
     UsageClass = utf8(),
     CheckoutType = utf8(),
@@ -55,7 +53,8 @@ seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
     Subjects = utf8(),
     Publisher = utf8(),
     PublicationYear = utf8()
-  )
+  ),
+    skip = 1,
 )
 ```
 
@@ -66,7 +65,7 @@ or
 
 seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
   format = "csv",
-  col_types = schema(ISBN = string()) #utf8()
+  col_types = schema(ISBN = string()) # or utf8()
 )
 seattle_csv
 ```

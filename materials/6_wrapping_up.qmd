@@ -34,7 +34,7 @@ airport_zones <- nyc_taxi_zones |>
 dropoff_zones <- nyc_taxi_zones |>
   select(dropoff_location_id = location_id,
          dropoff_zone = zone) |> 
-  compute() # run the query but don't pull results into R session
+  collect(as_data_frame = FALSE)
 
 airport_pickups <- open_dataset("data/nyc-taxi/") |>
   filter(pickup_location_id %in% airport_zones) |>
