@@ -8,7 +8,7 @@
 <link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
 <link href="../site_libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.5.53">
+  <meta name="generator" content="quarto-1.5.56">
 
   <title>Big Data in R with Arrow – wrapping_up</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -417,7 +417,7 @@
 <span id="cb1-14"><a></a>dropoff_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span></span>
 <span id="cb1-15"><a></a>  <span class="fu">select</span>(<span class="at">dropoff_location_id =</span> location_id,</span>
 <span id="cb1-16"><a></a>         <span class="at">dropoff_zone =</span> zone) <span class="sc">|&gt;</span> </span>
-<span id="cb1-17"><a></a>  <span class="fu">compute</span>() <span class="co"># run the query but don't pull results into R session</span></span>
+<span id="cb1-17"><a></a>  <span class="fu">collect</span>(<span class="at">as_data_frame =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb1-18"><a></a></span>
 <span id="cb1-19"><a></a>airport_pickups <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"data/nyc-taxi/"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb1-20"><a></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">%in%</span> airport_zones) <span class="sc">|&gt;</span></span>
@@ -830,7 +830,7 @@
       }
         var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
         var mailtoRegex = new RegExp(/^mailto:/);
-          var filterRegex = new RegExp('/' + window.location.host + '/');
+          var filterRegex = new RegExp("https:\/\/posit-conf-2024\.github\.io\/arrow\/");
         var isInternal = (href) => {
             return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
         }

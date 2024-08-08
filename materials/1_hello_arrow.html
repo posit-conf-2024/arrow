@@ -8,7 +8,7 @@
 <link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
 <link href="../site_libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.5.53">
+  <meta name="generator" content="quarto-1.5.56">
 
   <title>Big Data in R with Arrow – hello_arrow</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -395,11 +395,21 @@
 <h1>Hello Arrow</h1>
 
 </section>
+<section id="kick-off-qa" class="slide level2">
+<h2>Kick-off Q&amp;A</h2>
+<p><br></p>
+<ul>
+<li>What brings you to this workshop?</li>
+<li>What challenges have you faced related to larger-than-memory data in R?</li>
+<li>What is one thing you want to learn or achieve from today’s workshop?</li>
+<li>…?</li>
+</ul>
+</section>
 <section id="poll-arrow" class="slide level2">
 <h2>Poll: Arrow</h2>
 <p><br></p>
 <p><strong>Have you used or experimented with Arrow before today?</strong></p>
-<p>Vote using emojis on the <a href="add-url">#workshop-arrow discord channel</a>! <br></p>
+<p>Vote using emojis on the #workshop-arrow discord channel! <br></p>
 <p>1️⃣ Not yet</p>
 <p>2️⃣ Not yet, but I have read about it!</p>
 <p>3️⃣ A little</p>
@@ -443,10 +453,10 @@
 <section id="posit-workbench" class="slide level2">
 <h2>Posit Workbench 🛠️</h2>
 <ul>
-<li>Join Workbench via URL in the workshop Discord channel</li>
-<li>You can use you GitHub credentials to log in</li>
+<li>Join Workbench via URL in the #workshop-arrow Discord channel</li>
+<li>You can use your GitHub credentials to log in</li>
 </ul>
-<!-- [![](){.absolute left="200" width="600"} -->
+<p><img data-src="images/wb-signin.png" class="absolute" style="left: 200px; width: 300px; "> <img data-src="images/use-gh-creds.png" class="absolute" style="left: 500px; width: 300px; "></p>
 </section>
 <section id="larger-than-memory-data" class="slide level2">
 <h2>Larger-Than-Memory Data</h2>
@@ -960,7 +970,7 @@
       }
         var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
         var mailtoRegex = new RegExp(/^mailto:/);
-          var filterRegex = new RegExp('/' + window.location.host + '/');
+          var filterRegex = new RegExp("https:\/\/posit-conf-2024\.github\.io\/arrow\/");
         var isInternal = (href) => {
             return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
         }
