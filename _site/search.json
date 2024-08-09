@@ -1103,7 +1103,7 @@
     "href": "materials/0_housekeeping.html#setup",
     "title": "Big Data in R with Arrow",
     "section": "Setup 🍽️",
-    "text": "Setup 🍽️\n\nCreate a new session &gt;&gt; select “Resource Profile: Large”\nRun usethis::use_course(\"posit-conf-2024/arrow\")\nOpen data/setup.R and run the script\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+    "text": "Setup 🍽️\n\nCreate a new session: 🖱️ + New Session\nLeave defaults: 🖱️ Start Session\nRun in console: usethis::use_course(\"posit-conf-2024/arrow\")\nProceed with default location: 🖱 2\nAllow unzipping of folder: 🖱 3\nOpen data/setup.R and run the script 🎉\n\n \n\n\n\n\n🔗 pos.it/arrow-conf24"
   },
   {
     "objectID": "index.html",
@@ -1195,5 +1195,26 @@
     "title": "Big Data in R with Arrow",
     "section": "Grab a sticker!",
     "text": "Grab a sticker!\n\n\n\ngrab a hex sticker before you go!\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#posit-workbench-login",
+    "href": "materials/0_housekeeping.html#posit-workbench-login",
+    "title": "Big Data in R with Arrow",
+    "section": "Posit Workbench: Login 🛠️",
+    "text": "Posit Workbench: Login 🛠️\n\nJoin Workbench via URL in the #workshop-arrow Discord channel\nSelect Posit Workbench &gt;&gt; Sign in with OpenID\nUse your GitHub credentials to log in (click the icon)"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#posit-workbench-setup",
+    "href": "materials/0_housekeeping.html#posit-workbench-setup",
+    "title": "Big Data in R with Arrow",
+    "section": "Posit Workbench: Setup 🍽️",
+    "text": "Posit Workbench: Setup 🍽️\n\n🖱 +New Session\n🖱 Start Session (defaults are fine)\nRun usethis::use_course(\"posit-conf-2024/arrow\")"
+  },
+  {
+    "objectID": "materials/0_housekeeping.html#posit-workbench-setup-1",
+    "href": "materials/0_housekeeping.html#posit-workbench-setup-1",
+    "title": "Big Data in R with Arrow",
+    "section": "Posit Workbench: Setup 🍽️",
+    "text": "Posit Workbench: Setup 🍽️\n\nDefault location: 🖱 2\nUnzip 📁: 🖱 3\nOpen Session dialog box: Resource Profile &gt;&gt; select Large\nOpen + run data/setup.R 🎉\n\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
   }
 ]
