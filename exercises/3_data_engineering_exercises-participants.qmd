@@ -1,0 +1,120 @@
+---
+title: "Data Engineering with Arrow Exercises"
+execute:
+  echo: true
+  messages: false
+  warning: false
+  cache: true
+---
+
+# Data Types & Controlling the Schema
+
+```{r}
+#| label: load-packages
+library(arrow)
+library(dplyr)
+library(tictoc)
+```
+
+```{r}
+#| label: open-dataset-seattle-csv
+seattle_csv <- open_dataset(
+  sources = "data/seattle-library-checkouts.csv",
+  format = "csv"
+)
+```
+
+
+## Problems
+
+1.  The first few thousand rows of `ISBN` are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with `open_dataset()` and ensure the correct data type for `ISBN` is `<string>` instead of the `<null>` interpreted by Arrow.
+
+2.  Once you have a `Dataset` object with the metadata you are after, count the number of `Checkouts` by `CheckoutYear` and arrange the result by `CheckoutYear`.
+
+## Solution 1
+
+```{r}
+#| label: seattle-csv-schema-1
+
+```
+
+## Solution 2
+
+The number of `Checkouts` by `CheckoutYear` arranged by `CheckoutYear`:
+
+```{r}
+#| label: seattle-csv-dplyr-1
+
+```
+
+
+# Parquet
+
+```{r}
+#| label: write-dataset-seattle-parquet
+#| eval: false
+seattle_parquet <- "data/seattle-library-checkouts-parquet"
+
+seattle_csv |>
+  write_dataset(path = seattle_parquet,
+                format = "parquet")
+```
+
+
+## Problem
+
+1.  Re-run the query counting the number of `Checkouts` by `CheckoutYear` and arranging the result by `CheckoutYear`, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?
+
+## Solution 1
+
+```{r}
+#| label: seattle-parquet-dplyr-1
+
+```
+
+
+# Partitioning
+
+```{r}
+#| label: write-dataset-seattle-partitioned
+#| eval: false
+seattle_parquet_part <- "data/seattle-library-checkouts"
+
+seattle_csv |>
+  group_by(CheckoutYear) |>
+  write_dataset(path = seattle_parquet_part,
+                format = "parquet")
+```
+
+
+## Problems
+
+1.  Let's write the Seattle Checkout CSV data to a multi-file dataset just one more time! This time, write the data partitioned by `CheckoutType` as Parquet files.
+
+2.  Now compare the compute time between our Parquet data partitioned by `CheckoutYear` and our Parquet data partitioned by `CheckoutType` with a query of the total number of checkouts in September of 2019. Did you find a difference in compute time?
+
+## Solution 1
+
+Writing the data:
+
+```{r}
+#| label: write-dataset-seattle-checkouttype
+
+```
+
+## Solution 2
+
+Total number of Checkouts in September of 2019 using partitioned Parquet data by `CheckoutType`:
+
+```{r}
+#| label: seattle-partitioned-other-dplyr
+
+```
+
+Total number of Checkouts in September of 2019 using partitioned Parquet data by `CheckoutYear` and `CheckoutMonth`:
+
+```{r}
+#| label: seattle-partitioned-partitioned-filter-dplyr
+
+```
+
