@@ -80,15 +80,6 @@ unzip(
 )
 ```
 
-## Posit Workbench 🛠️
-
--   Join Workbench via URL in the #workshop-arrow Discord channel
--   You can use your GitHub credentials to log in
-
-![](images/wb-signin.png){.absolute left="200" width="300"}
-![](images/use-gh-creds.png){.absolute left="500" width="300"}
-
-
 ## Larger-Than-Memory Data
 
 <br>

@@ -111,9 +111,31 @@ Please note everyone’s lanyard colors before taking a photo and respect their 
 -   You have data in your life that is too large to fit into memory or sluggish in memory
 -   You want to learn how to engineer your data storage for more performant access and analysis
 
-## Setup
+## Posit Workbench: Login 🛠️
 
-- Log onto Workbench at the following URL: <add on conf day>
-- Create a new session; **select "Resource Profile: Large"**
+-   Join Workbench via URL in the #workshop-arrow Discord channel
+-   Select Posit Workbench >> Sign in with OpenID
+-   Use your GitHub credentials to log in (click the icon)
+
+![](images/wb-signin.png){.absolute left="200" width="300"}
+![](images/use-gh-creds.png){.absolute left="500" width="300"}
+
+## Posit Workbench: Setup 🍽️
+
+- 🖱 +New Session
+- 🖱 Start Session (defaults are fine)
 - Run `usethis::use_course("posit-conf-2024/arrow")`
-- Open `data/setup.R` and run the script
+
+![](images/wb-new-session.png){.absolute left="350" width="400"}
+
+
+## Posit Workbench: Setup 🍽️
+
+- Default location: 🖱 `2`
+- Unzip 📁: 🖱 `3`
+- Open Session dialog box: Resource Profile >> select `Large`
+- Open + run `data/setup.R` 🎉
+
+![](images/wb-usethis-session.png){.absolute left="350" width="375"}
+
+

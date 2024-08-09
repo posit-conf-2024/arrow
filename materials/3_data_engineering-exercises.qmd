@@ -11,6 +11,7 @@ editor: source
 
 ```{r}
 #| label: load-packages
+
 library(arrow)
 library(dplyr)
 ```
@@ -56,6 +57,7 @@ seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
   ),
     skip = 1,
 )
+seattle_csv
 ```
 
 or

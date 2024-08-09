@@ -17,7 +17,6 @@ library(arrow)
 library(dplyr)
 library(tictoc)
 
-
 seattle_parquet <- "data/seattle-library-checkouts-parquet"
 seattle_parquet_part <- "data/seattle-library-checkouts"
 ```
@@ -82,7 +81,6 @@ seattle_parquet_part <- "data/seattle-library-checkouts"
 library(arrow)
 library(dplyr)
 
-
 seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
                             format = "csv")
 seattle_csv
@@ -98,6 +96,7 @@ Let's extract the schema:
 
 ```{r}
 #| label: seattle-schema
+
 schema(seattle_csv)
 ```
 
@@ -127,6 +126,7 @@ Arrow scans 👀 1MB of data to impute or "guess" the data types
 
 ```{r}
 #| label: seattle-schema-again
+
 schema(seattle_csv)
 ```
 
@@ -151,6 +151,7 @@ Creating a schema manually:
 ```{r}
 #| label: seattle-schema-write
 #| eval: false
+
 schema(
   UsageClass = utf8(),
   CheckoutType = utf8(),
@@ -177,6 +178,7 @@ Use the code() method to extract the code from the schema:
 
 ```{r}
 #| label: seattle-schema-code
+
 seattle_csv$schema$code() 
 ```
 
@@ -191,6 +193,7 @@ Schema defines column names and types, so we need to skip the first row (skip = 
 ```{r}
 #| label: seattle-schema-control
 #| code-line-numbers: "|11|17"
+
 seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
   format = "csv",
   schema = schema(
@@ -218,6 +221,7 @@ Supply column types for a subset of columns by providing a partial schema:
 
 ```{r}
 #| label: seattle-schema-partial
+
 seattle_csv <- open_dataset(
   sources = "data/seattle-library-checkouts.csv",
   format = "csv",
@@ -239,6 +243,7 @@ seattle_csv
 
 ```{r}
 #| label: seattle-dplyr
+
 seattle_csv |>
   group_by(CheckoutYear) |>
   summarise(sum(Checkouts)) |>
@@ -251,6 +256,7 @@ seattle_csv |>
 ```{r}
 #| label: seattle-dplyr-timed
 #| code-line-numbers: "6"
+
 seattle_csv |>
   group_by(CheckoutYear) |>
   summarise(sum(Checkouts)) |>
@@ -305,6 +311,7 @@ seattle_csv |>
 
 ```{r}
 #| label: seattle-single-parquet-size
+
 file <- list.files(seattle_parquet)
 file.size(file.path(seattle_parquet, file)) / 10**9
 ```
@@ -323,6 +330,7 @@ Parquet about half the size of the CSV file on-disk 💾
 
 ```{r}
 #| label: seattle-single-parquet-dplyr-timed
+
 open_dataset(sources = seattle_parquet, 
              format = "parquet") |>
   group_by(CheckoutYear) |>

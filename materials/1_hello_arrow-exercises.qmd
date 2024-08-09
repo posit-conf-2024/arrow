@@ -11,6 +11,7 @@ editor: source
 #| label: load-packages
 library(arrow)
 library(dplyr)
+library(tictoc)
 ```
 
 ```{r}
