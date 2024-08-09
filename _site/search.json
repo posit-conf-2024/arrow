@@ -924,13 +924,6 @@
     "text": "NYC Taxi Data\n\nbig NYC Taxi data set (~40GBs on disk)\n\n\nopen_dataset(\"s3://voltrondata-labs-datasets/nyc-taxi\") |&gt;\n  filter(year %in% 2012:2021) |&gt;\n  write_dataset(\"data/nyc-taxi\", partitioning = c(\"year\", \"month\"))\n\n\ntiny NYC Taxi data set (&lt;1GB on disk)\n\n\ndownload.file(url = \"https://github.com/posit-conf-2023/arrow/releases/download/v0.1.0/nyc-taxi-tiny.zip\",\n              destfile = \"data/nyc-taxi-tiny.zip\")\n\nunzip(\n  zipfile = \"data/nyc-taxi-tiny.zip\",\n  exdir = \"data/\"\n)"
   },
   {
-    "objectID": "materials/1_hello_arrow.html#posit-workbench",
-    "href": "materials/1_hello_arrow.html#posit-workbench",
-    "title": "Big Data in R with Arrow",
-    "section": "Posit Workbench 🛠️",
-    "text": "Posit Workbench 🛠️\n\nJoin Workbench via URL in the #workshop-arrow Discord channel\nYou can use your GitHub credentials to log in"
-  },
-  {
     "objectID": "materials/1_hello_arrow.html#larger-than-memory-data",
     "href": "materials/1_hello_arrow.html#larger-than-memory-data",
     "title": "Big Data in R with Arrow",
@@ -963,7 +956,7 @@
     "href": "materials/1_hello_arrow.html#nyc-taxi-dataset-a-dplyr-pipeline",
     "title": "Big Data in R with Arrow",
     "section": "NYC Taxi Dataset: A dplyr pipeline",
-    "text": "NYC Taxi Dataset: A dplyr pipeline\n\nlibrary(dplyr)\n\nnyc_taxi |&gt;\n  group_by(year) |&gt;\n  summarise(\n    all_trips = n(),\n    shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)\n  ) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect()\n\n# A tibble: 10 × 4\n    year all_trips shared_trips pct_shared\n   &lt;int&gt;     &lt;int&gt;        &lt;int&gt;      &lt;dbl&gt;\n 1  2012 178544324     53313752       29.9\n 2  2013 173179759     51215013       29.6\n 3  2014 165114361     48816505       29.6\n 4  2015 146112989     43081091       29.5\n 5  2016 131165043     38163870       29.1\n 6  2017 113495512     32296166       28.5\n 7  2018 102797401     28796633       28.0\n 8  2019  84393604     23515989       27.9\n 9  2020  24647055      5837960       23.7\n10  2021  30902618      7221844       23.4"
+    "text": "NYC Taxi Dataset: A dplyr pipeline\n\nlibrary(dplyr)\n\nnyc_taxi |&gt;\n  group_by(year) |&gt;\n  summarise(\n    all_trips = n(),\n    shared_trips = sum(passenger_count &gt; 1, na.rm = TRUE)\n  ) |&gt;\n  mutate(pct_shared = shared_trips / all_trips * 100) |&gt;\n  collect()\n\n# A tibble: 10 × 4\n    year all_trips shared_trips pct_shared\n   &lt;int&gt;     &lt;int&gt;        &lt;int&gt;      &lt;dbl&gt;\n 1  2012 178544324     53313752       29.9\n 2  2013 173179759     51215013       29.6\n 3  2014 165114361     48816505       29.6\n 4  2015 146112989     43081091       29.5\n 5  2017 113495512     32296166       28.5\n 6  2018 102797401     28796633       28.0\n 7  2019  84393604     23515989       27.9\n 8  2020  24647055      5837960       23.7\n 9  2021  30902618      7221844       23.4\n10  2016 131165043     38163870       29.1"
   },
   {
     "objectID": "materials/1_hello_arrow.html#nyc-taxi-dataset-a-dplyr-pipeline-1",
@@ -1099,6 +1092,13 @@
     "text": "We Assume\n\nYou know \nYou are familiar with the dplyr package for data manipulation \nYou have data in your life that is too large to fit into memory or sluggish in memory\nYou want to learn how to engineer your data storage for more performant access and analysis"
   },
   {
+    "objectID": "materials/0_housekeeping.html#posit-workbench",
+    "href": "materials/0_housekeeping.html#posit-workbench",
+    "title": "Big Data in R with Arrow",
+    "section": "Posit Workbench 🛠️",
+    "text": "Posit Workbench 🛠️\n\nJoin Workbench via URL in the #workshop-arrow Discord channel\nSelect Posit Workbench &gt;&gt; Sign in with OpenID\nYou can use your GitHub credentials to log in (click the icon)"
+  },
+  {
     "objectID": "materials/0_housekeeping.html#setup",
     "href": "materials/0_housekeeping.html#setup",
     "title": "Big Data in R with Arrow",
@@ -1195,12 +1195,5 @@
     "title": "Big Data in R with Arrow",
     "section": "Grab a sticker!",
     "text": "Grab a sticker!\n\n\n\ngrab a hex sticker before you go!\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
-  },
-  {
-    "objectID": "materials/0_housekeeping.html#posit-workbench",
-    "href": "materials/0_housekeeping.html#posit-workbench",
-    "title": "Big Data in R with Arrow",
-    "section": "Posit Workbench 🛠️",
-    "text": "Posit Workbench 🛠️\n\nJoin Workbench via URL in the #workshop-arrow Discord channel\nSelect Posit Workbench &gt;&gt; Sign in with OpenID\nYou can use your GitHub credentials to log in (click the icon)"
   }
 ]
