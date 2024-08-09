@@ -1,0 +1,50 @@
+---
+title: "Data Manipulation Part 2 - Exercises"
+execute:
+  echo: true
+  messages: false
+  warning: false
+  cache: true
+---
+
+```{r}
+#| label: load-packages
+library(arrow)
+library(dplyr)
+```
+
+```{r}
+#| label: open-dataset
+nyc_taxi <- open_dataset("data/nyc-taxi")
+nyc_taxi
+```
+
+
+# User-defined functions
+
+## Problem
+
+1.  Write a user-defined function which wraps the `stringr` function `str_replace_na()`, and use it to replace any `NA` values in the `vendor_name` column with the string "No vendor" instead. (Test it on the data from 2019 so you're not pulling everything into memory)
+
+## Solution 1
+
+```{r}
+#| label: udf-solution
+
+```
+
+
+# Joins
+
+## Problem
+
+1.  How many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? (Hint: you can use `stringr::str_detect()` to help you find pickup zones with the word "Airport" in them)
+
+## Solution 1
+
+```{r}
+#| label: airport-pickup
+
+```
+
+

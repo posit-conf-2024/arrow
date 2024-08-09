@@ -1,0 +1,50 @@
+---
+title: "Hello Arrow Exercises"
+execute:
+  echo: true
+  messages: false
+  warning: false
+  cache: true
+---
+
+```{r}
+#| label: load-packages
+library(arrow)
+library(dplyr)
+library(tictoc)
+```
+
+
+```{r}
+#| label: open-dataset
+nyc_taxi <- open_dataset("data/nyc-taxi")
+nyc_taxi
+```
+
+
+## First dplyr pipeline with Arrow
+
+## Problems
+
+1.  Calculate the longest trip distance for every month in 2019
+
+2.  How long did this query take to run?
+
+## Solution 1
+
+Longest trip distance for every month in 2019:
+
+```{r}
+#| label: first-dplyr-exercise1
+
+```
+
+## Solution 2
+
+Compute time:
+
+```{r}
+#| label: first-dplyr-exercise2
+
+```
+
