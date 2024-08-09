@@ -445,10 +445,9 @@
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a></a><span class="fu">library</span>(arrow)</span>
 <span id="cb1-2"><a></a><span class="fu">library</span>(dplyr)</span>
 <span id="cb1-3"><a></a></span>
-<span id="cb1-4"><a></a></span>
-<span id="cb1-5"><a></a>seattle_csv <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="at">sources =</span> <span class="st">"data/seattle-library-checkouts.csv"</span>,</span>
-<span id="cb1-6"><a></a>                            <span class="at">format =</span> <span class="st">"csv"</span>)</span>
-<span id="cb1-7"><a></a>seattle_csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-4"><a></a>seattle_csv <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="at">sources =</span> <span class="st">"data/seattle-library-checkouts.csv"</span>,</span>
+<span id="cb1-5"><a></a>                            <span class="at">format =</span> <span class="st">"csv"</span>)</span>
+<span id="cb1-6"><a></a>seattle_csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>FileSystemDataset with 1 csv file
 12 columns
@@ -709,7 +708,7 @@ PublicationYear: string</code></pre>
 <span id="cb16-6"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 10.688   1.099  10.451 </code></pre>
+ 10.575   1.188  10.294 </code></pre>
 </div>
 </div>
 <p>42 million rows – not bad, but could be faster….</p>
@@ -794,7 +793,7 @@ PublicationYear: string</code></pre>
 <span id="cb21-7"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  1.771   0.431   0.568 </code></pre>
+  1.518   0.351   0.536 </code></pre>
 </div>
 </div>
 <p>42 million rows – much better! But could be <em>even</em> faster….</p>
@@ -922,7 +921,7 @@ PublicationYear: string</code></pre>
 <span id="cb26-9"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  1.742   0.385   0.366 </code></pre>
+  1.663   0.380   0.353 </code></pre>
 </div>
 </div>
 <p><br></p>
@@ -1014,7 +1013,7 @@ PublicationYear: string</code></pre>
 <span id="cb32-9"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 11.718   1.106  11.250 </code></pre>
+ 11.576   1.218  11.122 </code></pre>
 </div>
 </div>
 </section>
@@ -1033,7 +1032,7 @@ PublicationYear: string</code></pre>
 <span id="cb34-8"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.224   0.040   0.068 </code></pre>
+  0.225   0.046   0.068 </code></pre>
 </div>
 </div>
 </section>
