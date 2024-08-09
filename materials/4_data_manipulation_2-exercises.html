@@ -253,8 +253,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(arrow)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(duckdb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"data/nyc-taxi/"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -288,8 +287,8 @@ User-defined functions
 <pre><code># A tibble: 3 × 1
   vendor_name
   &lt;chr&gt;      
-1 VTS        
-2 CMT        
+1 CMT        
+2 VTS        
 3 &lt;NA&gt;       </code></pre>
 </div>
 </div>
@@ -374,8 +373,8 @@ Joins
 <pre><code># A tibble: 3 × 2
   pickup_zone             n
   &lt;chr&gt;               &lt;int&gt;
-1 LaGuardia Airport 2159224
-2 JFK Airport       2729336
+1 JFK Airport       2729336
+2 LaGuardia Airport 2159224
 3 Newark Airport       8643</code></pre>
 </div>
 </div>
