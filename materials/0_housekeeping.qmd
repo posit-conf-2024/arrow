@@ -115,7 +115,7 @@ Please note everyone’s lanyard colors before taking a photo and respect their 
 
 -   Join Workbench via URL in the #workshop-arrow Discord channel
 -   Select Posit Workbench >> Sign in with OpenID
--   You can use your GitHub credentials to log in (click the icon)
+-   Use your GitHub credentials to log in (click the icon)
 
 ![](images/wb-signin.png){.absolute left="200" width="300"}
 ![](images/use-gh-creds.png){.absolute left="500" width="300"}
