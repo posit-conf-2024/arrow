@@ -9,6 +9,7 @@ editor: source
 
 ```{r}
 #| label: load-packages
+
 library(arrow)
 library(dplyr)
 ```
@@ -27,6 +28,7 @@ library(dplyr)
 
 ```{r}
 #| label: arrow-table-read
+
 parquet_file <- "data/nyc-taxi/year=2019/month=9/part-0.parquet"
 
 taxi_table <- read_parquet(parquet_file, as_data_frame = FALSE)
@@ -37,6 +39,7 @@ taxi_table
 
 ```{r}
 #| label: table-to-tibble
+
 taxi_table |> collect()
 ```
 
@@ -44,6 +47,7 @@ or
 
 ```{r}
 #| label: table-to-tibble2
+
 as_tibble(taxi_table)
 ```
 
@@ -56,6 +60,7 @@ opts <- options(max.print = 120)
 
 ```{r}
 #| label: table-to-tibble3
+
 as.data.frame(taxi_table)
 ```
 
