@@ -8,7 +8,7 @@ by Nic Crane & Steph Hazlitt
 
 :spiral_calendar: August 12th, 2024\
 :alarm_clock: 09:00 - 17:00\
-:hotel: ADD-ROOM\
+:hotel: 305 | Chelais\
 :writing_hand: [pos.it/conf](http://pos.it/conf)
 
 ------------------------------------------------------------------------
