@@ -210,7 +210,7 @@ The contiguous columnar layout enables vectorization using the latest SIMD (Sing
 
 <br>
 
-![](images/arrow-r-pkg.png){.absolute top="0" left="300" width="700" height="900"}
+![](images/arrow-r-pkg-highlights.png){.absolute top="0" left="300" width="700" height="900"}
 
 ## arrow 📦
 
