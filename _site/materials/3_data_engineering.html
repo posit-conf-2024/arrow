@@ -466,6 +466,17 @@ PublicationYear: string</code></pre>
 </div>
 </div>
 </section>
+<section id="arrow-data-types" class="slide level2">
+<h2>Arrow Data Types</h2>
+<p>Arrow has a rich data type system, including direct analogs of many R data types</p>
+<ul>
+<li><code>&lt;dbl&gt;</code> == <code>&lt;double&gt;</code></li>
+<li><code>&lt;chr&gt;</code> == <code>&lt;string&gt;</code> OR <code>&lt;utf8&gt;</code> (aliases)</li>
+<li><code>&lt;int&gt;</code> == <code>&lt;int32&gt;</code></li>
+</ul>
+<p><br></p>
+<p><a href="https://arrow.apache.org/docs/r/articles/data_types.html" class="uri">https://arrow.apache.org/docs/r/articles/data_types.html</a></p>
+</section>
 <section id="arrowschema" class="slide level2">
 <h2>arrow::schema()</h2>
 <blockquote>
@@ -491,17 +502,6 @@ Publisher: string
 PublicationYear: string</code></pre>
 </div>
 </div>
-</section>
-<section id="arrow-data-types" class="slide level2">
-<h2>Arrow Data Types</h2>
-<p>Arrow has a rich data type system, including direct analogs of many R data types</p>
-<ul>
-<li><code>&lt;dbl&gt;</code> == <code>&lt;double&gt;</code></li>
-<li><code>&lt;chr&gt;</code> == <code>&lt;string&gt;</code> OR <code>&lt;utf8&gt;</code> (aliases)</li>
-<li><code>&lt;int&gt;</code> == <code>&lt;int32&gt;</code></li>
-</ul>
-<p><br></p>
-<p><a href="https://arrow.apache.org/docs/r/articles/data_types.html" class="uri">https://arrow.apache.org/docs/r/articles/data_types.html</a></p>
 </section>
 <section id="parsing-the-metadata" class="slide level2">
 <h2>Parsing the Metadata</h2>
@@ -660,7 +660,7 @@ PublicationYear: string</code></pre>
 <h2>Your Turn</h2>
 <ol type="1">
 <li><p>The first few thousand rows of <code>ISBN</code> are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with <code>open_dataset()</code> and ensure the correct data type for <code>ISBN</code> is <code>&lt;string&gt;</code> (or the alias <code>&lt;utf8&gt;</code>) instead of the <code>&lt;null&gt;</code> interpreted by Arrow.</p></li>
-<li><p>Once you have a <code>Dataset</code> object with the metadata you are after, count the number of <code>Checkouts</code> by <code>CheckoutYear</code> and arrange the result by <code>CheckoutYear</code>.</p></li>
+<li><p>Once you have a <code>Dataset</code> object with the correct data types, count the number of <code>Checkouts</code> by <code>CheckoutYear</code> and arrange the result by <code>CheckoutYear</code>.</p></li>
 </ol>
 <p>➡️ <a href="3_data_engineering-exercises.html">Data Storage Engineering Exercises Page</a></p>
 </section>
@@ -708,7 +708,7 @@ PublicationYear: string</code></pre>
 <span id="cb16-6"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 10.575   1.188  10.294 </code></pre>
+ 10.605   1.232  10.316 </code></pre>
 </div>
 </div>
 <p>42 million rows – not bad, but could be faster….</p>
@@ -731,9 +731,9 @@ PublicationYear: string</code></pre>
 <section id="parquet" class="slide level2">
 <h2>Parquet</h2>
 <ul>
+<li>“row-chunked &amp; column-oriented” == work on different parts of the file at the same time or skip some chunks all together, better performance than row-by-row</li>
 <li>compression and encoding == usually much smaller than equivalent CSV file, less data to move from disk to memory</li>
 <li>rich type system &amp; stores the schema along with the data == more robust pipelines</li>
-<li>“row-chunked &amp; column-oriented” == work on different parts of the file at the same time or skip some chunks all together, better performance than row-by-row</li>
 </ul>
 <aside class="notes">
 <ul>
@@ -777,7 +777,7 @@ PublicationYear: string</code></pre>
 <section id="your-turn-1" class="slide level2">
 <h2>Your Turn</h2>
 <ol type="1">
-<li>Re-run the query counting the number of <code>Checkouts</code> by <code>CheckoutYear</code> and arranging the result by <code>CheckoutYear</code>, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?</li>
+<li>Re-run the query counting the number of <code>Checkouts</code> by <code>CheckoutYear</code> and arranging the result by <code>CheckoutYear</code>, this time using the Seattle Checkout data saved to disk as a single Parquet file. Did you notice a difference in compute time?</li>
 </ol>
 <p>➡️ <a href="3_data_engineering-exercises.html">Data Storage Engineering Exercises Page</a></p>
 </section>
@@ -793,7 +793,7 @@ PublicationYear: string</code></pre>
 <span id="cb21-7"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  1.518   0.351   0.536 </code></pre>
+  1.820   0.460   0.562 </code></pre>
 </div>
 </div>
 <p>42 million rows – much better! But could be <em>even</em> faster….</p>
@@ -921,7 +921,7 @@ PublicationYear: string</code></pre>
 <span id="cb26-9"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  1.663   0.380   0.353 </code></pre>
+  1.665   0.387   0.359 </code></pre>
 </div>
 </div>
 <p><br></p>
@@ -936,6 +936,47 @@ PublicationYear: string</code></pre>
 <p>➡️ <a href="3_data_engineering-exercises.html">Data Storage Engineering Exercises Page</a></p>
 </section>
 <section id="partition-design" class="slide level2">
+<h2>Partition Design</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a></a>seattle_checkouttype <span class="ot">&lt;-</span> <span class="st">"data/seattle-library-checkouts-type"</span></span>
+<span id="cb28-2"><a></a></span>
+<span id="cb28-3"><a></a>seattle_csv <span class="sc">|&gt;</span></span>
+<span id="cb28-4"><a></a>  <span class="fu">group_by</span>(CheckoutType) <span class="sc">|&gt;</span></span>
+<span id="cb28-5"><a></a>  <span class="fu">write_dataset</span>(<span class="at">path =</span> seattle_checkouttype,</span>
+<span id="cb28-6"><a></a>                <span class="at">format =</span> <span class="st">"parquet"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><br></p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p>Filter == Partition</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a></a><span class="fu">open_dataset</span>(<span class="st">"data/seattle-library-checkouts"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb29-2"><a></a>  <span class="fu">filter</span>(CheckoutYear <span class="sc">==</span> <span class="dv">2019</span>, CheckoutMonth <span class="sc">==</span> <span class="dv">9</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb29-3"><a></a>  <span class="fu">summarise</span>(<span class="at">TotalCheckouts =</span> <span class="fu">sum</span>(Checkouts)) <span class="sc">|&gt;</span></span>
+<span id="cb29-4"><a></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb29-5"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   user  system elapsed 
+  0.037   0.005   0.029 </code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<p>Filter != Partition</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a></a><span class="fu">open_dataset</span>(<span class="at">sources =</span> <span class="st">"data/seattle-library-checkouts-type"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb31-2"><a></a>  <span class="fu">filter</span>(CheckoutYear <span class="sc">==</span> <span class="dv">2019</span>, CheckoutMonth <span class="sc">==</span> <span class="dv">9</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb31-3"><a></a>  <span class="fu">summarise</span>(<span class="at">TotalCheckouts =</span> <span class="fu">sum</span>(Checkouts)) <span class="sc">|&gt;</span></span>
+<span id="cb31-4"><a></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb31-5"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   user  system elapsed 
+  0.776   0.077   0.289 </code></pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="partition-design-1" class="slide level2">
 <h2>Partition Design</h2>
 <div class="columns">
 <div class="column" style="width:50%;">
@@ -952,13 +993,13 @@ PublicationYear: string</code></pre>
 <h2>Partitions &amp; NA Values</h2>
 <p>Default:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a></a>partition_na_default_path <span class="ot">&lt;-</span> <span class="st">"data/na-partition-default"</span></span>
-<span id="cb28-2"><a></a></span>
-<span id="cb28-3"><a></a><span class="fu">write_dataset</span>(starwars,</span>
-<span id="cb28-4"><a></a>              partition_na_default_path,</span>
-<span id="cb28-5"><a></a>              <span class="at">partitioning =</span> <span class="st">"hair_color"</span>)</span>
-<span id="cb28-6"><a></a></span>
-<span id="cb28-7"><a></a><span class="fu">list.files</span>(partition_na_default_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a></a>partition_na_default_path <span class="ot">&lt;-</span> <span class="st">"data/na-partition-default"</span></span>
+<span id="cb33-2"><a></a></span>
+<span id="cb33-3"><a></a><span class="fu">write_dataset</span>(starwars,</span>
+<span id="cb33-4"><a></a>              partition_na_default_path,</span>
+<span id="cb33-5"><a></a>              <span class="at">partitioning =</span> <span class="st">"hair_color"</span>)</span>
+<span id="cb33-6"><a></a></span>
+<span id="cb33-7"><a></a><span class="fu">list.files</span>(partition_na_default_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "hair_color=__HIVE_DEFAULT_PARTITION__"
  [2] "hair_color=auburn"                    
@@ -979,14 +1020,14 @@ PublicationYear: string</code></pre>
 <h2>Partitions &amp; NA Values</h2>
 <p>Custom:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a></a>partition_na_custom_path <span class="ot">&lt;-</span> <span class="st">"data/na-partition-custom"</span></span>
-<span id="cb30-2"><a></a></span>
-<span id="cb30-3"><a></a><span class="fu">write_dataset</span>(starwars,</span>
-<span id="cb30-4"><a></a>              partition_na_custom_path,</span>
-<span id="cb30-5"><a></a>              <span class="at">partitioning =</span> <span class="fu">hive_partition</span>(<span class="at">hair_color =</span> <span class="fu">string</span>(),</span>
-<span id="cb30-6"><a></a>                                            <span class="at">null_fallback =</span> <span class="st">"no_color"</span>))</span>
-<span id="cb30-7"><a></a></span>
-<span id="cb30-8"><a></a><span class="fu">list.files</span>(partition_na_custom_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a></a>partition_na_custom_path <span class="ot">&lt;-</span> <span class="st">"data/na-partition-custom"</span></span>
+<span id="cb35-2"><a></a></span>
+<span id="cb35-3"><a></a><span class="fu">write_dataset</span>(starwars,</span>
+<span id="cb35-4"><a></a>              partition_na_custom_path,</span>
+<span id="cb35-5"><a></a>              <span class="at">partitioning =</span> <span class="fu">hive_partition</span>(<span class="at">hair_color =</span> <span class="fu">string</span>(),</span>
+<span id="cb35-6"><a></a>                                            <span class="at">null_fallback =</span> <span class="st">"no_color"</span>))</span>
+<span id="cb35-7"><a></a></span>
+<span id="cb35-8"><a></a><span class="fu">list.files</span>(partition_na_custom_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "hair_color=auburn"            "hair_color=auburn%2C%20grey" 
  [3] "hair_color=auburn%2C%20white" "hair_color=black"            
@@ -1002,18 +1043,17 @@ PublicationYear: string</code></pre>
 <p>How long does it take to calculate the number of books checked out in each month of 2021?</p>
 <p><br></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a></a><span class="fu">open_dataset</span>(<span class="at">sources =</span> <span class="st">"data/seattle-library-checkouts.csv"</span>, </span>
-<span id="cb32-2"><a></a>  <span class="at">format =</span> <span class="st">"csv"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb32-3"><a></a></span>
-<span id="cb32-4"><a></a>  <span class="fu">filter</span>(CheckoutYear <span class="sc">==</span> <span class="dv">2021</span>, MaterialType <span class="sc">==</span> <span class="st">"BOOK"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb32-5"><a></a>  <span class="fu">group_by</span>(CheckoutMonth) <span class="sc">|&gt;</span></span>
-<span id="cb32-6"><a></a>  <span class="fu">summarise</span>(<span class="at">TotalCheckouts =</span> <span class="fu">sum</span>(Checkouts)) <span class="sc">|&gt;</span></span>
-<span id="cb32-7"><a></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(CheckoutMonth)) <span class="sc">|&gt;</span></span>
-<span id="cb32-8"><a></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
-<span id="cb32-9"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a></a><span class="fu">open_dataset</span>(<span class="at">sources =</span> <span class="st">"data/seattle-library-checkouts.csv"</span>, </span>
+<span id="cb37-2"><a></a>  <span class="at">format =</span> <span class="st">"csv"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb37-3"><a></a></span>
+<span id="cb37-4"><a></a>  <span class="fu">filter</span>(CheckoutYear <span class="sc">==</span> <span class="dv">2021</span>, MaterialType <span class="sc">==</span> <span class="st">"BOOK"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb37-5"><a></a>  <span class="fu">group_by</span>(CheckoutMonth) <span class="sc">|&gt;</span></span>
+<span id="cb37-6"><a></a>  <span class="fu">summarise</span>(<span class="at">TotalCheckouts =</span> <span class="fu">sum</span>(Checkouts)) <span class="sc">|&gt;</span></span>
+<span id="cb37-7"><a></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
+<span id="cb37-8"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 11.576   1.218  11.122 </code></pre>
+ 11.619   1.269  11.152 </code></pre>
 </div>
 </div>
 </section>
@@ -1022,17 +1062,16 @@ PublicationYear: string</code></pre>
 <p>How long does it take to calculate the number of books checked out in each month of 2021?</p>
 <p><br></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a></a><span class="fu">open_dataset</span>(<span class="at">sources =</span> <span class="st">"data/seattle-library-checkouts"</span>,</span>
-<span id="cb34-2"><a></a>             <span class="at">format =</span> <span class="st">"parquet"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb34-3"><a></a>  <span class="fu">filter</span>(CheckoutYear <span class="sc">==</span> <span class="dv">2021</span>, MaterialType <span class="sc">==</span> <span class="st">"BOOK"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb34-4"><a></a>  <span class="fu">group_by</span>(CheckoutMonth) <span class="sc">|&gt;</span></span>
-<span id="cb34-5"><a></a>  <span class="fu">summarise</span>(<span class="at">TotalCheckouts =</span> <span class="fu">sum</span>(Checkouts)) <span class="sc">|&gt;</span></span>
-<span id="cb34-6"><a></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(CheckoutMonth)) <span class="sc">|&gt;</span></span>
-<span id="cb34-7"><a></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb34-8"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a></a><span class="fu">open_dataset</span>(<span class="at">sources =</span> <span class="st">"data/seattle-library-checkouts"</span>,</span>
+<span id="cb39-2"><a></a>             <span class="at">format =</span> <span class="st">"parquet"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb39-3"><a></a>  <span class="fu">filter</span>(CheckoutYear <span class="sc">==</span> <span class="dv">2021</span>, MaterialType <span class="sc">==</span> <span class="st">"BOOK"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb39-4"><a></a>  <span class="fu">group_by</span>(CheckoutMonth) <span class="sc">|&gt;</span></span>
+<span id="cb39-5"><a></a>  <span class="fu">summarise</span>(<span class="at">TotalCheckouts =</span> <span class="fu">sum</span>(Checkouts)) <span class="sc">|&gt;</span></span>
+<span id="cb39-6"><a></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb39-7"><a></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.225   0.046   0.068 </code></pre>
+  0.223   0.046   0.068 </code></pre>
 </div>
 </div>
 </section>
