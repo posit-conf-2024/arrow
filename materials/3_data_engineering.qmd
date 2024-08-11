@@ -86,6 +86,18 @@ seattle_csv <- open_dataset(sources = "data/seattle-library-checkouts.csv",
 seattle_csv
 ```
 
+## Arrow Data Types
+
+Arrow has a rich data type system, including direct analogs of many R data types
+
+-   `<dbl>` == `<double>`
+-   `<chr>` == `<string>` OR `<utf8>` (aliases)
+-   `<int>` == `<int32>`
+
+<br>
+
+<https://arrow.apache.org/docs/r/articles/data_types.html>
+
 ## arrow::schema()
 
 > Create a schema or extract one from an object.
@@ -99,18 +111,6 @@ Let's extract the schema:
 
 schema(seattle_csv)
 ```
-
-## Arrow Data Types
-
-Arrow has a rich data type system, including direct analogs of many R data types
-
--   `<dbl>` == `<double>`
--   `<chr>` == `<string>` OR `<utf8>` (aliases)
--   `<int>` == `<int32>`
-
-<br>
-
-<https://arrow.apache.org/docs/r/articles/data_types.html>
 
 ## Parsing the Metadata
 
@@ -235,7 +235,7 @@ seattle_csv
 
 1.  The first few thousand rows of `ISBN` are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with `open_dataset()` and ensure the correct data type for `ISBN` is `<string>` (or the alias `<utf8>`) instead of the `<null>` interpreted by Arrow.
 
-2.  Once you have a `Dataset` object with the metadata you are after, count the number of `Checkouts` by `CheckoutYear` and arrange the result by `CheckoutYear`.
+2.  Once you have a `Dataset` object with the correct data types, count the number of `Checkouts` by `CheckoutYear` and arrange the result by `CheckoutYear`.
 
 ➡️ [Data Storage Engineering Exercises Page](3_data_engineering-exercises.html)
 
@@ -285,9 +285,10 @@ seattle_csv |>
 
 ## Parquet
 
+-   "row-chunked & column-oriented" == work on different parts of the file at the same time or skip some chunks all together, better performance than row-by-row
 -   compression and encoding == usually much smaller than equivalent CSV file, less data to move from disk to memory
 -   rich type system & stores the schema along with the data == more robust pipelines
--   "row-chunked & column-oriented" == work on different parts of the file at the same time or skip some chunks all together, better performance than row-by-row
+
 
 ::: notes
 -   efficient encodings to keep file size down, and supports file compression, less data to move from disk to memory
@@ -322,7 +323,7 @@ Parquet about half the size of the CSV file on-disk 💾
 
 ## Your Turn
 
-1.  Re-run the query counting the number of `Checkouts` by `CheckoutYear` and arranging the result by `CheckoutYear`, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?
+1.  Re-run the query counting the number of `Checkouts` by `CheckoutYear` and arranging the result by `CheckoutYear`, this time using the Seattle Checkout data saved to disk as a single Parquet file. Did you notice a difference in compute time?
 
 ➡️ [Data Storage Engineering Exercises Page](3_data_engineering-exercises.html)
 
@@ -445,6 +446,52 @@ open_dataset(sources = seattle_parquet_part,
 
 ## Partition Design
 
+```{r}
+#| label: soln-write-dataset-checkouttype
+#| eval: false
+
+seattle_checkouttype <- "data/seattle-library-checkouts-type"
+
+seattle_csv |>
+  group_by(CheckoutType) |>
+  write_dataset(path = seattle_checkouttype,
+                format = "parquet")
+```
+
+<br>
+
+::: columns
+::: {.column width="50%"}
+Filter == Partition
+```{r}
+#| label: partition-filter
+
+open_dataset("data/seattle-library-checkouts") |> 
+  filter(CheckoutYear == 2019, CheckoutMonth == 9) |> 
+  summarise(TotalCheckouts = sum(Checkouts)) |>
+  collect() |> 
+  system.time()
+```
+
+:::
+
+::: {.column width="50%"}
+Filter != Partition
+```{r}
+#| label: partition-non-filter
+
+open_dataset(sources = "data/seattle-library-checkouts-type") |> 
+  filter(CheckoutYear == 2019, CheckoutMonth == 9) |> 
+  summarise(TotalCheckouts = sum(Checkouts)) |>
+  collect() |> 
+  system.time()
+```
+
+:::
+:::
+
+## Partition Design
+
 ::: columns
 ::: {.column width="50%"}
 -   Partitioning on variables commonly used in `filter()` often faster
@@ -461,6 +508,8 @@ open_dataset(sources = seattle_parquet_part,
 Default:
 
 ```{r}
+#| label: na-default
+
 partition_na_default_path <- "data/na-partition-default"
 
 write_dataset(starwars,
@@ -475,6 +524,8 @@ list.files(partition_na_default_path)
 Custom:
 
 ```{r}
+#| label: na-custom
+
 partition_na_custom_path <- "data/na-partition-custom"
 
 write_dataset(starwars,
@@ -500,7 +551,6 @@ open_dataset(sources = "data/seattle-library-checkouts.csv",
   filter(CheckoutYear == 2021, MaterialType == "BOOK") |>
   group_by(CheckoutMonth) |>
   summarise(TotalCheckouts = sum(Checkouts)) |>
-  arrange(desc(CheckoutMonth)) |>
   collect() |>
   system.time()
 ```
@@ -519,7 +569,6 @@ open_dataset(sources = "data/seattle-library-checkouts",
   filter(CheckoutYear == 2021, MaterialType == "BOOK") |>
   group_by(CheckoutMonth) |>
   summarise(TotalCheckouts = sum(Checkouts)) |>
-  arrange(desc(CheckoutMonth)) |>
   collect() |> 
   system.time()
 ```
