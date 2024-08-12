@@ -270,7 +270,21 @@
     "href": "materials/4_data_manipulation_2.html#how-do-function-bindings-usually-work",
     "title": "Big Data in R with Arrow",
     "section": "How do function bindings usually work?",
-    "text": "How do function bindings usually work?\n ## How do UDFs work?\n\n\ntime_diff_minutes &lt;- function(pickup, dropoff){\n  difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n}\n\nnyc_taxi |&gt;\n  mutate(\n    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)\n  ) |&gt; \n  select(pickup_datetime, dropoff_datetime, duration_minutes) |&gt;\n  head() |&gt;\n  collect()\n\nError in `time_diff_minutes()`:\n! `difftime()` with units other than `secs` not supported in Arrow\n→ Call collect() first to pull data into R.\n\n\nWe get an error as we can’t automatically convert the function to arrow."
+    "text": "How do function bindings usually work?"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#how-do-udfs-work",
+    "href": "materials/4_data_manipulation_2.html#how-do-udfs-work",
+    "title": "Big Data in R with Arrow",
+    "section": "How do UDFs work?",
+    "text": "How do UDFs work?"
+  },
+  {
+    "objectID": "materials/4_data_manipulation_2.html#a-function",
+    "href": "materials/4_data_manipulation_2.html#a-function",
+    "title": "Big Data in R with Arrow",
+    "section": "A function",
+    "text": "A function\n\ntime_diff_minutes &lt;- function(pickup, dropoff){\n  difftime(dropoff, pickup, units = \"mins\") |&gt;\n      round() |&gt;\n      as.integer()\n}\n\nnyc_taxi |&gt;\n  mutate(\n    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)\n  ) |&gt; \n  select(pickup_datetime, dropoff_datetime, duration_minutes) |&gt;\n  head() |&gt;\n  collect()\n\nError in `time_diff_minutes()`:\n! `difftime()` with units other than `secs` not supported in Arrow\n→ Call collect() first to pull data into R.\n\n\nWe get an error as we can’t automatically convert the function to arrow."
   },
   {
     "objectID": "materials/4_data_manipulation_2.html#user-defined-functions---definition",
@@ -319,7 +333,7 @@
     "href": "materials/4_data_manipulation_2.html#user-defined-functions---usage",
     "title": "Big Data in R with Arrow",
     "section": "User-defined functions - usage",
-    "text": "User-defined functions - usage\n\nnyc_taxi |&gt;\n  mutate(\n    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)\n  ) |&gt;\n  select(pickup_datetime, dropoff_datetime, duration_minutes) |&gt;\n  head() |&gt;\n  collect()\n\n# A tibble: 6 × 3\n  pickup_datetime     dropoff_datetime    duration_minutes\n  &lt;dttm&gt;              &lt;dttm&gt;                         &lt;int&gt;\n1 2012-11-02 16:40:32 2012-11-02 16:58:16               18\n2 2012-11-02 16:40:41 2012-11-02 16:45:56                5\n3 2012-11-02 16:40:50 2012-11-02 16:49:20                8\n4 2012-11-02 16:40:52 2012-11-02 16:46:15                5\n5 2012-11-02 16:41:00 2012-11-02 16:44:00                3\n6 2012-11-02 16:41:00 2012-11-02 16:45:00                4"
+    "text": "User-defined functions - usage\n\nnyc_taxi |&gt;\n  mutate(\n    duration_minutes = time_diff_minutes(pickup_datetime, dropoff_datetime)\n  ) |&gt;\n  select(pickup_datetime, dropoff_datetime, duration_minutes) |&gt;\n  head() |&gt;\n  collect()\n\n# A tibble: 6 × 3\n  pickup_datetime     dropoff_datetime    duration_minutes\n  &lt;dttm&gt;              &lt;dttm&gt;                         &lt;int&gt;\n1 2012-10-07 10:19:00 2012-10-07 10:29:00               10\n2 2012-10-07 10:19:00 2012-10-07 10:33:00               14\n3 2012-10-07 10:19:00 2012-10-07 10:35:00               16\n4 2012-10-07 10:19:00 2012-10-07 10:35:00               16\n5 2012-10-07 10:19:00 2012-10-07 10:42:00               23\n6 2012-10-07 10:19:00 2012-10-07 10:43:00               24"
   },
   {
     "objectID": "materials/4_data_manipulation_2.html#your-turn",
@@ -347,7 +361,7 @@
     "href": "materials/4_data_manipulation_2.html#joining-a-reference-table",
     "title": "Big Data in R with Arrow",
     "section": "Joining a reference table",
-    "text": "Joining a reference table\n\nvendors &lt;- tibble::tibble(\n  code = c(\"VTS\", \"CMT\", \"DDS\"),\n  full_name = c(\n    \"Verifone Transportation Systems\",\n    \"Creative Mobile Technologies\",\n    \"Digital Dispatch Systems\"\n  )\n)\n\nnyc_taxi |&gt;\n  left_join(vendors, by = c(\"vendor_name\" = \"code\")) |&gt;\n  select(vendor_name, full_name, pickup_datetime) |&gt;\n  head(3) |&gt;\n  collect()\n\n# A tibble: 3 × 3\n  vendor_name full_name                    pickup_datetime    \n  &lt;chr&gt;       &lt;chr&gt;                        &lt;dttm&gt;             \n1 CMT         Creative Mobile Technologies 2012-01-27 15:35:26\n2 CMT         Creative Mobile Technologies 2012-01-27 06:56:04\n3 CMT         Creative Mobile Technologies 2012-01-27 08:12:50"
+    "text": "Joining a reference table\n\nvendors &lt;- tibble::tibble(\n  code = c(\"VTS\", \"CMT\", \"DDS\"),\n  full_name = c(\n    \"Verifone Transportation Systems\",\n    \"Creative Mobile Technologies\",\n    \"Digital Dispatch Systems\"\n  )\n)\n\nnyc_taxi |&gt;\n  left_join(vendors, by = c(\"vendor_name\" = \"code\")) |&gt;\n  select(vendor_name, full_name, pickup_datetime) |&gt;\n  head(3) |&gt;\n  collect()\n\n# A tibble: 3 × 3\n  vendor_name full_name                    pickup_datetime    \n  &lt;chr&gt;       &lt;chr&gt;                        &lt;dttm&gt;             \n1 CMT         Creative Mobile Technologies 2012-01-18 07:19:18\n2 CMT         Creative Mobile Technologies 2012-01-18 14:01:40\n3 CMT         Creative Mobile Technologies 2012-01-18 10:10:08"
   },
   {
     "objectID": "materials/4_data_manipulation_2.html#traps-for-the-unwary",
@@ -403,7 +417,7 @@
     "href": "materials/4_data_manipulation_2.html#join-and-cross-tabulate",
     "title": "Big Data in R with Arrow",
     "section": "Join and cross-tabulate",
-    "text": "Join and cross-tabulate\n\n\nlibrary(tictoc)\n\ntic()\nborough_counts &lt;- nyc_taxi |&gt; \n  left_join(pickup) |&gt;\n  left_join(dropoff) |&gt;\n  count(pickup_borough, dropoff_borough) |&gt;\n  arrange(desc(n)) |&gt;\n  collect()\ntoc()\n\n177.061 sec elapsed\n\n\n\n2-3 minutes to join twice and cross-tabulate on non-partition variables, with 1.15 billion rows of data 🙂"
+    "text": "Join and cross-tabulate\n\n\nlibrary(tictoc)\n\ntic()\nborough_counts &lt;- nyc_taxi |&gt; \n  left_join(pickup) |&gt;\n  left_join(dropoff) |&gt;\n  count(pickup_borough, dropoff_borough) |&gt;\n  arrange(desc(n)) |&gt;\n  collect()\ntoc()\n\n199.58 sec elapsed\n\n\n\n2-3 minutes to join twice and cross-tabulate on non-partition variables, with 1.15 billion rows of data 🙂"
   },
   {
     "objectID": "materials/4_data_manipulation_2.html#the-results",
@@ -557,7 +571,7 @@
     "href": "materials/0_housekeeping.html#posit-workbench-setup-1",
     "title": "Big Data in R with Arrow",
     "section": "Posit Workbench: Setup 🍽️",
-    "text": "Posit Workbench: Setup 🍽️\n\nDefault location: 🖱 2\nUnzip 📁: 🖱 3\nOpen Session dialog box: Resource Profile &gt;&gt; select Large\nOpen + run data/setup.R 🎉\n\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
+    "text": "Posit Workbench: Setup 🍽️\n\nDefault location: Yes!\nUnzip 📁: Yes!\nOpen Session dialog box: Resource Profile &gt;&gt; select Large\nOpen + run data/setup.R 🎉\n\n\n\n\n\n\n🔗 pos.it/arrow-conf24"
   },
   {
     "objectID": "index.html",
