@@ -285,7 +285,7 @@ Data Types &amp; Controlling the Schema
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <ol type="1">
 <li><p>The first few thousand rows of <code>ISBN</code> are blank in the Seattle Checkouts CSV file. Read in the Seattle Checkouts CSV file with <code>open_dataset()</code> and ensure the correct data type for <code>ISBN</code> is <code>&lt;string&gt;</code> (or the alias <code>&lt;utf8&gt;</code>) instead of the <code>&lt;null&gt;</code> interpreted by Arrow.</p></li>
-<li><p>Once you have a <code>Dataset</code> object with the metadata you are after, count the number of <code>Checkouts</code> by <code>CheckoutYear</code> and arrange the result by <code>CheckoutYear</code>.</p></li>
+<li><p>Once you have a <code>Dataset</code> object with the correct data types, count the number of <code>Checkouts</code> by <code>CheckoutYear</code> and arrange the result by <code>CheckoutYear</code>.</p></li>
 </ol>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
@@ -423,7 +423,7 @@ PublicationYear: string</code></pre>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 10.696   1.227  10.449 </code></pre>
+ 10.660   1.244  10.399 </code></pre>
 </div>
 </div>
 <p>Querying 42 million rows of data stored in a CSV on disk in ~10 seconds, not too bad.</p>
@@ -457,7 +457,7 @@ Parquet
 <div class="tab-content">
 <div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
 <ol type="1">
-<li>Re-run the query counting the number of <code>Checkouts</code> by <code>CheckoutYear</code> and arranging the result by <code>CheckoutYear</code>, this time using the Seattle Checkout data saved to disk as a single, Parquet file. Did you notice a difference in compute time?</li>
+<li>Re-run the query counting the number of <code>Checkouts</code> by <code>CheckoutYear</code> and arranging the result by <code>CheckoutYear</code>, this time using the Seattle Checkout data saved to disk as a single Parquet file. Did you notice a difference in compute time?</li>
 </ol>
 </div>
 <div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
@@ -473,7 +473,7 @@ Parquet
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  1.576   0.377   0.548 </code></pre>
+  1.758   0.445   0.557 </code></pre>
 </div>
 </div>
 <p>A <em>much</em> faster compute time for the query when the on-disk data is stored in the Parquet format.</p>
@@ -533,7 +533,7 @@ Partitioning
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.779   0.080   0.301 </code></pre>
+  0.781   0.085   0.297 </code></pre>
 </div>
 </div>
 <p>Total number of Checkouts in September of 2019 using partitioned Parquet data by <code>CheckoutYear</code> and <code>CheckoutMonth</code>:</p>
@@ -545,7 +545,7 @@ Partitioning
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.035   0.005   0.029 </code></pre>
+  0.033   0.006   0.031 </code></pre>
 </div>
 </div>
 <p>Faster compute time because the <code>filter()</code> call is based on the partitions.</p>
