@@ -38,6 +38,11 @@ nyc_taxi <- open_dataset("data/nyc-taxi/")
 * Implement your own custom functions
 * Run in R not Arrow
 
+<!-- 
+In arrow 17.0.0 there will be less need to do this for custom functions
+
+-->
+
 ## How do function bindings usually work?
 
 ![](images/udf_normal.png)
@@ -66,12 +71,28 @@ nyc_taxi |>
 ```
 We get an error as we can't automatically convert the function to arrow.
 
+<!-- 
+* why did this happen?
+* Look at ?acero and show how difftime is implemented but only supports units= "secs"
+
+-->
+
 # User-defined functions (aka UDFs)
 
 -   Define your own functions
 -   Scalar functions - 1 row input and 1 row output
 
+<!-- 
+* Instead of having an Acero binding, Acero calls back to R to work out the result
+* Naturally slower than working entirely in Acero as now we don't have vectorisation, or any of the Arrow C++ optimisations
+* But, ultimately makes it possible
+-->
+
 ## User-defined functions - definition
+
+<!-- 
+show slide don't type
+-->
 
 ```{r}
 #| label: udf-define-1
@@ -92,6 +113,13 @@ register_scalar_function(
 ```
 
 This looks complicated, so let's look at it 1 part at a time!
+
+<!-- 
+UDFs *are* ugly!
+And that's because when we have bindings, we rely on the arrow R package's internals to handle all the complicated stuff like working out the types of the values.
+But it's not as bad as it looks, so we'll break it down!
+
+-->
 
 ## User-defined functions - definition
 
@@ -114,6 +142,21 @@ register_scalar_function(
   auto_convert = TRUE
 )
 ```
+
+<!--
+show ?register_scalar_function help file
+
+set up the skeleton (i.e. register_scalar_function) and add in components 1 at a time
+
+name = some name to call it
+
+fun = the body of the function. first argument must be called "context" and you don't do anything with it - it'll be used by Acero to pass some metadata between Arrow and R. after that, define other arguments, and the function body like you otherwise would.
+
+in_type and out_type = so usually we don't have to worry about data types as the bindings do that for us, but now we're working more closely with Acero's internals, we need to do more things manually, so we have to tell it the data type of the input and output columns
+
+The `auto_convert` argument controls whether arrow automatically converts the inputs to R vectors or not.
+The default value `FALSE` can be used when working with R6 objects, but as we're working in an arrow dplyr pipeline here, we'll set it to `TRUE`.
+-->
 
 ## User-defined functions - definition
 
@@ -216,6 +259,10 @@ nyc_taxi |>
   collect()
 ```
 
+<!-- 
+So, we call `register_scalar_function()` to create it, and then then when we run our pipeline it appears there
+-->
+
 ## Your Turn
 
 1.  Write a user-defined function which wraps the `stringr` function `str_replace_na()`, and use it to replace any `NA` values in the `vendor_name` column with the string "No vendor" instead. (Test it on the data from 2019 so you're not pulling everything into memory)
@@ -233,6 +280,18 @@ nyc_taxi |>
 ## Joins
 
 ![](images/joins.png)
+
+<!-- 
+* combining data from different sources into a single source
+* fairly common to encounter when we have a dataset and some sort of reference table to combine it with
+* in the example here, we've done what's called a left-join:
+  * take everything from the table on the left
+  * decide which column to use for the join
+    * in this case, join vendor_name in the left table to code in the right table
+  * to do the join, goes through each row in the left table and finds the matching value in the right table, but then also brings the corresponding column (or multiple) from the right table
+* there are different type of joins, but the focus here isn't on joins, but is on what you need to know about doing joins in arrow
+* let's start off by writing out the code to do the join from the example
+-->
 
 ## Joining a reference table
 
@@ -255,6 +314,11 @@ nyc_taxi |>
   collect()
 ```
 
+<!-- 
+* This was pretty straightforward here, and a lot of the time it should just work, but there are some things you should know about
+
+-->
+
 ## Traps for the unwary
 
 Question: which are the most common borough-to-borough journeys in the dataset?
@@ -270,6 +334,12 @@ nyc_taxi_zones <-
 nyc_taxi_zones
 ```
 
+<!-- 
+* the taxi data contains location IDs for the different pickup locations, but what if we want to be more generic and look at the different boroughs that people travel between?
+* one of the data files is a reference table which maps the location IDs to their Borough, and so we can answer this question by joining the reference table to our dataset
+* let's take a look
+-->
+
 ## Why didn't this work?
 
 ```{r}
@@ -281,13 +351,18 @@ nyc_taxi |>
   collect()
 ```
 
+<!-- 
+* The thing to do here feels like, let's do a join again then
+* it's complaining about data types, so let's look at the schema of both
+-->
+
 ## Schema for the `nyc_taxi` Dataset
 
 ```{r}
 #| label: get-schema
 schema(nyc_taxi)
 ```
-
+<!-- In the original data, pickup_location_id is an int64 -->
 ## Schema for the `nyc_taxi_zones` Table
 
 ```{r}
@@ -299,6 +374,14 @@ schema(nyc_taxi_zones_arrow)
 
 -   `pickup_location_id` is int64 in the `nyc_taxi` table
 -   `location_id` is int32 in the `nyc_taxi_zones` table
+
+<!-- 
+When we do a join here, the nyc_taxi_zones object we read in was a tibble as we collected it in memory.
+Arrow needs 2 Arrow objects to do a join, so behind the scenes, when we do the join, the tibble is converted into an Arrow Table.
+When we convert between R and Arrow objects, Arrow automatically does the type conversion for us.
+That's why here we call `arrow_table()` to see what the type conversion will be, and call schema()
+The thing to note here is that these are different types - and arrow needs for the join key column to be the same type. So what we need to do is manually specify the schema.
+-->
 
 ## Take control of the schema
 
@@ -314,6 +397,11 @@ nyc_taxi_zones_arrow <- arrow_table(
 -   `schema()` takes variable name / types as input
 -   arrow has various "type" functions: `int64()`, `utf8()`, `boolean()`, `date32()` etc
 
+<!-- 
+This time we manually convert the data frame into a table and set the schema
+Alternatively, we could specify it when we read the data in
+-->
+
 ## Take control of the schema
 
 ```{r}
@@ -325,6 +413,11 @@ nyc_taxi_zones_arrow <- arrow_table(
 )
 schema(nyc_taxi_zones_arrow)
 ```
+
+<!-- 
+Now we can see the schema matches so we should be able to run our analysis
+Let's do 1 final thing to answer our borough to borough question!
+-->
 
 ## Prepare the auxiliary tables
 
@@ -344,6 +437,8 @@ dropoff <- nyc_taxi_zones_arrow |>
 
 
 ## Join and cross-tabulate
+
+<!-- Run the code and recap the section while the timer runs! -->
 
 ```{r}
 #| label: join-crosstab

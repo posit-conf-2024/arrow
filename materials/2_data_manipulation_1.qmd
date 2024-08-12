@@ -175,7 +175,7 @@ long_rides_2021 |>
 #| label: get-help
 #| eval: false
 
-?`arrow-dplyr`
+?acero
 ```
 
 or view them at <https://arrow.apache.org/docs/r/reference/acero.html>
@@ -279,8 +279,12 @@ nyc_taxi |>
 ## How does this work?
 
 ![](images/dplyr-backend.png)
+## Acero
 
-## arrow C++
+* arrow's query execution engine
+* use Arrow functions on Arrow Datasets
+
+## Acero
 
 ![](images/arrow_cpp_functions.png)
 
@@ -304,7 +308,7 @@ nyc_taxi |>
 ```{r}
 #| label: get-help-funcs
 
-?`arrow-dplyr`
+?acero
 ```
 
 or view them at <https://arrow.apache.org/docs/r/reference/acero.html>
@@ -385,10 +389,10 @@ See $.data for the source Arrow object'
 
 * arrow 17.0.0 or later
 * this will only work for functions which have Arrow bindings
-* use `` ?`arrow-dplyr` `` to see which ones do
+* use `?acero` to see which ones do
 
 ## Summary
 
 -   Working with Arrow Datasets allow you to manipulate data which is larger-than-memory
--   You can use many dplyr functions with arrow - run `` ?`arrow-dplyr` `` to view the docs
+-   You can use many dplyr functions with arrow - run `?acero` to view the docs
 -   You can pass data to duckdb to use functions implemented in duckdb but not arrow

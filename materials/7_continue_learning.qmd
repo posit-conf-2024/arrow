@@ -12,6 +12,12 @@ editor: source
 
 # Continue Your Arrow Learning Journey {#more-learning}
 
+## Book
+
+<https://arrowrbook.com>
+
+![](images/dummybookcover.png)
+
 ## Docs
 
 ::: {style="font-size: 80%;"}

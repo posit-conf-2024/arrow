@@ -8,9 +8,9 @@
 <link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
 <link href="../site_libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.4.555">
+  <meta name="generator" content="quarto-1.5.53">
 
-  <title>Big Data in R with Arrow</title>
+  <title>Big Data in R with Arrow – data_manipulation_2</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -41,7 +41,7 @@
     }
     @media print {
     pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
     }
     pre.numberSource code
       { counter-reset: source-line 0; }
@@ -69,7 +69,7 @@
     code span.at { color: #657422; } /* Attribute */
     code span.bn { color: #ad0000; } /* BaseN */
     code span.bu { } /* BuiltIn */
-    code span.cf { color: #003b4f; } /* ControlFlow */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
     code span.ch { color: #20794d; } /* Char */
     code span.cn { color: #8f5902; } /* Constant */
     code span.co { color: #5e5e5e; } /* Comment */
@@ -83,7 +83,7 @@
     code span.fu { color: #4758ab; } /* Function */
     code span.im { color: #00769e; } /* Import */
     code span.in { color: #5e5e5e; } /* Information */
-    code span.kw { color: #003b4f; } /* Keyword */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
     code span.op { color: #5e5e5e; } /* Operator */
     code span.ot { color: #003b4f; } /* Other */
     code span.pp { color: #ad0000; } /* Preprocessor */
@@ -409,6 +409,10 @@
 <li>Implement your own custom functions</li>
 <li>Run in R not Arrow</li>
 </ul>
+<!-- 
+In arrow 17.0.0 there will be less need to do this for custom functions
+
+-->
 </section>
 <section id="how-do-function-bindings-usually-work" class="slide level2">
 <h2>How do function bindings usually work?</h2>
@@ -429,11 +433,17 @@
 <span id="cb1-12"><a></a>  <span class="fu">head</span>() <span class="sc">|&gt;</span></span>
 <span id="cb1-13"><a></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-error">
-<pre><code>Error: Expression time_diff_minutes(pickup_datetime, dropoff_datetime) not supported in Arrow
-Call collect() first to pull data into R.</code></pre>
+<pre><code>Error in `time_diff_minutes()`:
+! `difftime()` with units other than `secs` not supported in Arrow
+→ Call collect() first to pull data into R.</code></pre>
 </div>
 </div>
 <p>We get an error as we can’t automatically convert the function to arrow.</p>
+<!-- 
+* why did this happen?
+* Look at ?acero and show how difftime is implemented but only supports units= "secs"
+
+-->
 </section></section>
 <section>
 <section id="user-defined-functions-aka-udfs" class="title-slide slide level1 center">
@@ -442,9 +452,17 @@ Call collect() first to pull data into R.</code></pre>
 <li>Define your own functions</li>
 <li>Scalar functions - 1 row input and 1 row output</li>
 </ul>
+<!-- 
+* Instead of having an Acero binding, Acero calls back to R to work out the result
+* Naturally slower than working entirely in Acero as now we don't have vectorisation, or any of the Arrow C++ optimisations
+* But, ultimately makes it possible
+-->
 </section>
 <section id="user-defined-functions---definition" class="slide level2">
 <h2>User-defined functions - definition</h2>
+<!-- 
+show slide don't type
+-->
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a></a><span class="fu">register_scalar_function</span>(</span>
 <span id="cb3-2"><a></a>  <span class="at">name =</span> <span class="st">"time_diff_minutes"</span>,</span>
@@ -462,6 +480,12 @@ Call collect() first to pull data into R.</code></pre>
 <span id="cb3-14"><a></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This looks complicated, so let’s look at it 1 part at a time!</p>
+<!-- 
+UDFs *are* ugly!
+And that's because when we have bindings, we rely on the arrow R package's internals to handle all the complicated stuff like working out the types of the values.
+But it's not as bad as it looks, so we'll break it down!
+
+-->
 </section>
 <section id="user-defined-functions---definition-1" class="slide level2">
 <h2>User-defined functions - definition</h2>
@@ -482,6 +506,20 @@ Call collect() first to pull data into R.</code></pre>
 <span id="cb4-13"><a></a>  <span class="at">auto_convert =</span> <span class="cn">TRUE</span></span>
 <span id="cb4-14"><a></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<!--
+show ?register_scalar_function help file
+
+set up the skeleton (i.e. register_scalar_function) and add in components 1 at a time
+
+name = some name to call it
+
+fun = the body of the function. first argument must be called "context" and you don't do anything with it - it'll be used by Acero to pass some metadata between Arrow and R. after that, define other arguments, and the function body like you otherwise would.
+
+in_type and out_type = so usually we don't have to worry about data types as the bindings do that for us, but now we're working more closely with Acero's internals, we need to do more things manually, so we have to tell it the data type of the input and output columns
+
+The `auto_convert` argument controls whether arrow automatically converts the inputs to R vectors or not.
+The default value `FALSE` can be used when working with R6 objects, but as we're working in an arrow dplyr pipeline here, we'll set it to `TRUE`.
+-->
 </section>
 <section id="user-defined-functions---definition-2" class="slide level2">
 <h2>User-defined functions - definition</h2>
@@ -577,14 +615,17 @@ Call collect() first to pull data into R.</code></pre>
 <pre><code># A tibble: 6 × 3
   pickup_datetime     dropoff_datetime    duration_minutes
   &lt;dttm&gt;              &lt;dttm&gt;                         &lt;int&gt;
-1 2012-10-07 18:19:00 2012-10-07 18:29:00               10
-2 2012-10-07 18:19:00 2012-10-07 18:33:00               14
-3 2012-10-07 18:19:00 2012-10-07 18:35:00               16
-4 2012-10-07 18:19:00 2012-10-07 18:35:00               16
-5 2012-10-07 18:19:00 2012-10-07 18:42:00               23
-6 2012-10-07 18:19:00 2012-10-07 18:43:00               24</code></pre>
+1 2012-11-02 16:40:32 2012-11-02 16:58:16               18
+2 2012-11-02 16:40:41 2012-11-02 16:45:56                5
+3 2012-11-02 16:40:50 2012-11-02 16:49:20                8
+4 2012-11-02 16:40:52 2012-11-02 16:46:15                5
+5 2012-11-02 16:41:00 2012-11-02 16:44:00                3
+6 2012-11-02 16:41:00 2012-11-02 16:45:00                4</code></pre>
 </div>
 </div>
+<!-- 
+So, we call `register_scalar_function()` to create it, and then then when we run our pipeline it appears there
+-->
 </section>
 <section id="your-turn" class="slide level2">
 <h2>Your Turn</h2>
@@ -609,6 +650,17 @@ Call collect() first to pull data into R.</code></pre>
 <section id="joins-1" class="slide level2">
 <h2>Joins</h2>
 
+<!-- 
+* combining data from different sources into a single source
+* fairly common to encounter when we have a dataset and some sort of reference table to combine it with
+* in the example here, we've done what's called a left-join:
+  * take everything from the table on the left
+  * decide which column to use for the join
+    * in this case, join vendor_name in the left table to code in the right table
+  * to do the join, goes through each row in the left table and finds the matching value in the right table, but then also brings the corresponding column (or multiple) from the right table
+* there are different type of joins, but the focus here isn't on joins, but is on what you need to know about doing joins in arrow
+* let's start off by writing out the code to do the join from the example
+-->
 <img data-src="images/joins.png" class="r-stretch"></section>
 <section id="joining-a-reference-table" class="slide level2">
 <h2>Joining a reference table</h2>
@@ -631,11 +683,15 @@ Call collect() first to pull data into R.</code></pre>
 <pre><code># A tibble: 3 × 3
   vendor_name full_name                    pickup_datetime    
   &lt;chr&gt;       &lt;chr&gt;                        &lt;dttm&gt;             
-1 CMT         Creative Mobile Technologies 2012-10-07 17:26:40
-2 CMT         Creative Mobile Technologies 2012-10-07 17:26:52
-3 CMT         Creative Mobile Technologies 2012-10-07 17:26:57</code></pre>
+1 CMT         Creative Mobile Technologies 2012-01-27 15:35:26
+2 CMT         Creative Mobile Technologies 2012-01-27 06:56:04
+3 CMT         Creative Mobile Technologies 2012-01-27 08:12:50</code></pre>
 </div>
 </div>
+<!-- 
+* This was pretty straightforward here, and a lot of the time it should just work, but there are some things you should know about
+
+-->
 </section>
 <section id="traps-for-the-unwary" class="slide level2">
 <h2>Traps for the unwary</h2>
@@ -664,6 +720,11 @@ Call collect() first to pull data into R.</code></pre>
 # ℹ 255 more rows</code></pre>
 </div>
 </div>
+<!-- 
+* the taxi data contains location IDs for the different pickup locations, but what if we want to be more generic and look at the different boroughs that people travel between?
+* one of the data files is a reference table which maps the location IDs to their Borough, and so we can answer this question by joining the reference table to our dataset
+* let's take a look
+-->
 </section>
 <section id="why-didnt-this-work" class="slide level2">
 <h2>Why didn’t this work?</h2>
@@ -676,6 +737,10 @@ Call collect() first to pull data into R.</code></pre>
 ! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(location_id) of type int32</code></pre>
 </div>
 </div>
+<!-- 
+* The thing to do here feels like, let's do a join again then
+* it's complaining about data types, so let's look at the schema of both
+-->
 </section>
 <section id="schema-for-the-nyc_taxi-dataset" class="slide level2">
 <h2>Schema for the <code>nyc_taxi</code> Dataset</h2>
@@ -709,6 +774,7 @@ year: int32
 month: int32</code></pre>
 </div>
 </div>
+<!-- In the original data, pickup_location_id is an int64 -->
 </section>
 <section id="schema-for-the-nyc_taxi_zones-table" class="slide level2">
 <h2>Schema for the <code>nyc_taxi_zones</code> Table</h2>
@@ -725,6 +791,13 @@ borough: string</code></pre>
 <li><code>pickup_location_id</code> is int64 in the <code>nyc_taxi</code> table</li>
 <li><code>location_id</code> is int32 in the <code>nyc_taxi_zones</code> table</li>
 </ul>
+<!-- 
+When we do a join here, the nyc_taxi_zones object we read in was a tibble as we collected it in memory.
+Arrow needs 2 Arrow objects to do a join, so behind the scenes, when we do the join, the tibble is converted into an Arrow Table.
+When we convert between R and Arrow objects, Arrow automatically does the type conversion for us.
+That's why here we call `arrow_table()` to see what the type conversion will be, and call schema()
+The thing to note here is that these are different types - and arrow needs for the join key column to be the same type. So what we need to do is manually specify the schema.
+-->
 </section>
 <section id="take-control-of-the-schema" class="slide level2">
 <h2>Take control of the schema</h2>
@@ -738,6 +811,10 @@ borough: string</code></pre>
 <li><code>schema()</code> takes variable name / types as input</li>
 <li>arrow has various “type” functions: <code>int64()</code>, <code>utf8()</code>, <code>boolean()</code>, <code>date32()</code> etc</li>
 </ul>
+<!-- 
+This time we manually convert the data frame into a table and set the schema
+Alternatively, we could specify it when we read the data in
+-->
 </section>
 <section id="take-control-of-the-schema-1" class="slide level2">
 <h2>Take control of the schema</h2>
@@ -753,6 +830,10 @@ location_id: int64
 borough: string</code></pre>
 </div>
 </div>
+<!-- 
+Now we can see the schema matches so we should be able to run our analysis
+Let's do 1 final thing to answer our borough to borough question!
+-->
 </section>
 <section id="prepare-the-auxiliary-tables" class="slide level2">
 <h2>Prepare the auxiliary tables</h2>
@@ -771,6 +852,7 @@ borough: string</code></pre>
 </section>
 <section id="join-and-cross-tabulate" class="slide level2">
 <h2>Join and cross-tabulate</h2>
+<!-- Run the code and recap the section while the timer runs! -->
 <div class="cell">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a></a><span class="fu">library</span>(tictoc)</span>
 <span id="cb25-2"><a></a></span>
@@ -783,7 +865,7 @@ borough: string</code></pre>
 <span id="cb25-9"><a></a>  <span class="fu">collect</span>()</span>
 <span id="cb25-10"><a></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>163.966 sec elapsed</code></pre>
+<pre><code>177.061 sec elapsed</code></pre>
 </div>
 </div>
 <p><br></p>
@@ -1112,18 +1194,7 @@ borough: string</code></pre>
         }
         return false;
       }
-      const clipboard = new window.ClipboardJS('.code-copy-button', {
-        text: function(trigger) {
-          const codeEl = trigger.previousElementSibling.cloneNode(true);
-          for (const childEl of codeEl.children) {
-            if (isCodeAnnotation(childEl)) {
-              childEl.remove();
-            }
-          }
-          return codeEl.innerText;
-        }
-      });
-      clipboard.on('success', function(e) {
+      const onCopySuccess = function(e) {
         // button target
         const button = e.trigger;
         // don't keep focus
@@ -1155,7 +1226,29 @@ borough: string</code></pre>
         }, 1000);
         // clear code selection
         e.clearSelection();
+      }
+      const getTextToCopy = function(trigger) {
+          const codeEl = trigger.previousElementSibling.cloneNode(true);
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+      }
+      const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+        text: getTextToCopy
       });
+      clipboard.on('success', onCopySuccess);
+      if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+        // For code content inside modals, clipBoardJS needs to be initialized with a container option
+        // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+        const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+          text: getTextToCopy,
+          container: window.document.getElementById('quarto-embedded-source-code-modal')
+        });
+        clipboardModal.on('success', onCopySuccess);
+      }
         var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
         var mailtoRegex = new RegExp(/^mailto:/);
           var filterRegex = new RegExp('/' + window.location.host + '/');
@@ -1163,7 +1256,7 @@ borough: string</code></pre>
             return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
         }
         // Inspect non-navigation links and adorn them if external
-     	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+     	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
         for (var i=0; i<links.length; i++) {
           const link = links[i];
           if (!isInternal(link.href)) {
