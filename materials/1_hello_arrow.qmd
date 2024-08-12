@@ -12,17 +12,6 @@ editor: source
 
 # Hello Arrow {#hello-arrow}
 
-
-## Kick-off Q&A
-
-<br>
-
-- What brings you to this workshop?
-- What challenges have you faced related to larger-than-memory data in R?
-- What is one thing you want to learn or achieve from today's workshop?
-- ...?
-
-
 ## Poll: Arrow
 
 <br>

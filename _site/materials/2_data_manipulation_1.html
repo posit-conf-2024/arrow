@@ -8,9 +8,9 @@
 <link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
 <link href="../site_libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.4.555">
+  <meta name="generator" content="quarto-1.5.53">
 
-  <title>Big Data in R with Arrow</title>
+  <title>Big Data in R with Arrow – data_manipulation_1</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -41,7 +41,7 @@
     }
     @media print {
     pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
     }
     pre.numberSource code
       { counter-reset: source-line 0; }
@@ -69,7 +69,7 @@
     code span.at { color: #657422; } /* Attribute */
     code span.bn { color: #ad0000; } /* BaseN */
     code span.bu { } /* BuiltIn */
-    code span.cf { color: #003b4f; } /* ControlFlow */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
     code span.ch { color: #20794d; } /* Char */
     code span.cn { color: #8f5902; } /* Constant */
     code span.co { color: #5e5e5e; } /* Comment */
@@ -83,7 +83,7 @@
     code span.fu { color: #4758ab; } /* Function */
     code span.im { color: #00769e; } /* Import */
     code span.in { color: #5e5e5e; } /* Information */
-    code span.kw { color: #003b4f; } /* Keyword */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
     code span.op { color: #5e5e5e; } /* Operator */
     code span.ot { color: #003b4f; } /* Other */
     code span.pp { color: #ad0000; } /* Preprocessor */
@@ -543,12 +543,12 @@ Use `schema()` to see entire schema</code></pre>
 <pre><code># A tibble: 6 × 2
   fare_amount fare_pounds
         &lt;dbl&gt;       &lt;dbl&gt;
-1         8          6.32
-2        17         13.4 
-3         6.5        5.14
-4         7          5.53
-5         6.5        5.14
-6        42         33.2 </code></pre>
+1        16.5       13.0 
+2        21.5       17.0 
+3         5          3.95
+4        10.5        8.30
+5        11          8.69
+6         5.5        4.35</code></pre>
 </div>
 </div>
 </section>
@@ -607,7 +607,7 @@ Use `schema()` to see entire schema</code></pre>
 <section id="head-to-the-docs" class="slide level2">
 <h2>Head to the docs!</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a></a>?<span class="st">`</span><span class="at">arrow-dplyr</span><span class="st">`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a></a>?acero</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>or view them at <a href="https://arrow.apache.org/docs/r/reference/acero.html" class="uri">https://arrow.apache.org/docs/r/reference/acero.html</a></p>
 </section>
@@ -621,9 +621,9 @@ Use `schema()` to see entire schema</code></pre>
 <pre><code># A tibble: 3 × 3
   pickup_datetime      year trip_distance
   &lt;dttm&gt;              &lt;int&gt;         &lt;dbl&gt;
-1 2021-11-16 12:55:00  2021       351613.
-2 2021-10-27 17:46:00  2021       345124.
-3 2021-12-11 10:48:00  2021       335094.</code></pre>
+1 2021-11-16 04:55:00  2021       351613.
+2 2021-10-27 09:46:00  2021       345124.
+3 2021-12-11 02:48:00  2021       335094.</code></pre>
 </div>
 </div>
 </section>
@@ -637,9 +637,9 @@ Use `schema()` to see entire schema</code></pre>
 <pre><code># A tibble: 3 × 3
   pickup_datetime      year trip_distance
   &lt;dttm&gt;              &lt;int&gt;         &lt;dbl&gt;
-1 2021-10-02 15:04:53  2021          188.
-2 2021-10-03 16:45:02  2021          134 
-3 2021-10-03 17:29:35  2021          218.</code></pre>
+1 2021-01-03 01:01:26  2021          216.
+2 2021-01-03 03:36:52  2021          268.
+3 2021-10-02 07:04:53  2021          188.</code></pre>
 </div>
 </div>
 </section>
@@ -746,10 +746,14 @@ Use `schema()` to see entire schema</code></pre>
 </section>
 <section id="how-does-this-work" class="slide level2">
 <h2>How does this work?</h2>
-
-<img data-src="images/dplyr-backend.png" class="r-stretch"></section>
-<section id="arrow-c" class="slide level2">
-<h2>arrow C++</h2>
+<p><img data-src="images/dplyr-backend.png"> ## Acero</p>
+<ul>
+<li>arrow’s query execution engine</li>
+<li>use Arrow functions on Arrow Datasets</li>
+</ul>
+</section>
+<section id="acero" class="slide level2">
+<h2>Acero</h2>
 
 <img data-src="images/arrow_cpp_functions.png" class="r-stretch"></section>
 <section id="arrow-dplyr-queries-1" class="slide level2">
@@ -764,15 +768,16 @@ Use `schema()` to see entire schema</code></pre>
 <span id="cb31-3"><a></a>  <span class="fu">head</span>() <span class="sc">|&gt;</span></span>
 <span id="cb31-4"><a></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-error">
-<pre><code>Error: Expression na_if(vendor_name, "CMT") not supported in Arrow
-Call collect() first to pull data into R.</code></pre>
+<pre><code>Error in `na_if()`:
+! Expression not supported in Arrow
+→ Call collect() first to pull data into R.</code></pre>
 </div>
 </div>
 </section>
 <section id="head-to-the-docs-again-to-see-whats-implemented" class="slide level2">
 <h2>Head to the docs again to see what’s implemented!</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a></a>?<span class="st">`</span><span class="at">arrow-dplyr</span><span class="st">`</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a></a>?acero</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>or view them at <a href="https://arrow.apache.org/docs/r/reference/acero.html" class="uri">https://arrow.apache.org/docs/r/reference/acero.html</a></p>
 </section>
@@ -787,12 +792,12 @@ Call collect() first to pull data into R.</code></pre>
 <pre><code># A tibble: 6 × 24
   vendor_name pickup_datetime     dropoff_datetime    passenger_count
   &lt;chr&gt;       &lt;dttm&gt;              &lt;dttm&gt;                        &lt;int&gt;
-1 &lt;NA&gt;        2012-01-20 14:09:36 2012-01-20 14:42:25               1
-2 &lt;NA&gt;        2012-01-20 14:54:10 2012-01-20 15:06:55               1
-3 &lt;NA&gt;        2012-01-20 08:08:01 2012-01-20 08:11:02               1
-4 &lt;NA&gt;        2012-01-20 08:36:22 2012-01-20 08:39:44               1
-5 &lt;NA&gt;        2012-01-20 20:58:32 2012-01-20 21:03:04               1
-6 &lt;NA&gt;        2012-01-20 19:40:20 2012-01-20 19:43:43               2
+1 &lt;NA&gt;        2012-01-20 06:09:36 2012-01-20 06:42:25               1
+2 &lt;NA&gt;        2012-01-20 06:54:10 2012-01-20 07:06:55               1
+3 &lt;NA&gt;        2012-01-20 00:08:01 2012-01-20 00:11:02               1
+4 &lt;NA&gt;        2012-01-20 00:36:22 2012-01-20 00:39:44               1
+5 &lt;NA&gt;        2012-01-20 12:58:32 2012-01-20 13:03:04               1
+6 &lt;NA&gt;        2012-01-20 11:40:20 2012-01-20 11:43:43               2
 # ℹ 20 more variables: trip_distance &lt;dbl&gt;, pickup_longitude &lt;dbl&gt;,
 #   pickup_latitude &lt;dbl&gt;, rate_code &lt;chr&gt;, store_and_fwd &lt;chr&gt;,
 #   dropoff_longitude &lt;dbl&gt;, dropoff_latitude &lt;dbl&gt;, payment_type &lt;chr&gt;,
@@ -839,12 +844,12 @@ Call collect() first to pull data into R.</code></pre>
 <pre><code># A tibble: 6 × 2
   pickup_datetime     pickup_text
   &lt;dttm&gt;              &lt;chr&gt;      
-1 2012-01-08 20:50:38 Sunday PM  
-2 2012-01-08 20:52:01 Sunday PM  
-3 2012-01-08 02:39:26 Sunday AM  
-4 2012-01-08 02:40:49 Sunday AM  
-5 2012-01-09 03:42:37 Monday AM  
-6 2012-01-08 20:51:47 Sunday PM  </code></pre>
+1 2012-01-08 12:50:38 Sunday PM  
+2 2012-01-08 12:52:01 Sunday PM  
+3 2012-01-07 18:39:26 Sunday AM  
+4 2012-01-07 18:40:49 Sunday AM  
+5 2012-01-08 19:42:37 Monday AM  
+6 2012-01-08 12:51:47 Sunday PM  </code></pre>
 </div>
 </div>
 </section>
@@ -871,14 +876,14 @@ See $.data for the source Arrow object</code></pre>
 <ul>
 <li>arrow 17.0.0 or later</li>
 <li>this will only work for functions which have Arrow bindings</li>
-<li>use <code>?`arrow-dplyr`</code> to see which ones do</li>
+<li>use <code>?acero</code> to see which ones do</li>
 </ul>
 </section>
 <section id="summary-1" class="slide level2">
 <h2>Summary</h2>
 <ul>
 <li>Working with Arrow Datasets allow you to manipulate data which is larger-than-memory</li>
-<li>You can use many dplyr functions with arrow - run <code>?`arrow-dplyr`</code> to view the docs</li>
+<li>You can use many dplyr functions with arrow - run <code>?acero</code> to view the docs</li>
 <li>You can pass data to duckdb to use functions implemented in duckdb but not arrow</li>
 </ul>
 
@@ -1169,18 +1174,7 @@ See $.data for the source Arrow object</code></pre>
         }
         return false;
       }
-      const clipboard = new window.ClipboardJS('.code-copy-button', {
-        text: function(trigger) {
-          const codeEl = trigger.previousElementSibling.cloneNode(true);
-          for (const childEl of codeEl.children) {
-            if (isCodeAnnotation(childEl)) {
-              childEl.remove();
-            }
-          }
-          return codeEl.innerText;
-        }
-      });
-      clipboard.on('success', function(e) {
+      const onCopySuccess = function(e) {
         // button target
         const button = e.trigger;
         // don't keep focus
@@ -1212,7 +1206,29 @@ See $.data for the source Arrow object</code></pre>
         }, 1000);
         // clear code selection
         e.clearSelection();
+      }
+      const getTextToCopy = function(trigger) {
+          const codeEl = trigger.previousElementSibling.cloneNode(true);
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+      }
+      const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+        text: getTextToCopy
       });
+      clipboard.on('success', onCopySuccess);
+      if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+        // For code content inside modals, clipBoardJS needs to be initialized with a container option
+        // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+        const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+          text: getTextToCopy,
+          container: window.document.getElementById('quarto-embedded-source-code-modal')
+        });
+        clipboardModal.on('success', onCopySuccess);
+      }
         var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
         var mailtoRegex = new RegExp(/^mailto:/);
           var filterRegex = new RegExp('/' + window.location.host + '/');
@@ -1220,7 +1236,7 @@ See $.data for the source Arrow object</code></pre>
             return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
         }
         // Inspect non-navigation links and adorn them if external
-     	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+     	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
         for (var i=0; i<links.length; i++) {
           const link = links[i];
           if (!isInternal(link.href)) {

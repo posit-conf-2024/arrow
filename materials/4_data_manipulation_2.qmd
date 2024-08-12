@@ -438,6 +438,8 @@ dropoff <- nyc_taxi_zones_arrow |>
 
 ## Join and cross-tabulate
 
+<!-- Run the code and recap the section while the timer runs! -->
+
 ```{r}
 #| label: join-crosstab
 
