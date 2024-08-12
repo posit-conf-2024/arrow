@@ -46,10 +46,12 @@ In arrow 17.0.0 there will be less need to do this for custom functions
 ## How do function bindings usually work?
 
 ![](images/udf_normal.png)
+
 ## How do UDFs work?
 
 ![](images/udf.png)
 
+## A function
 
 ```{r}
 #| label: difftime-error
@@ -333,6 +335,7 @@ nyc_taxi_zones <-
 
 nyc_taxi_zones
 ```
+
 
 <!-- 
 * the taxi data contains location IDs for the different pickup locations, but what if we want to be more generic and look at the different boroughs that people travel between?

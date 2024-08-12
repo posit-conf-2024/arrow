@@ -416,8 +416,14 @@ In arrow 17.0.0 there will be less need to do this for custom functions
 </section>
 <section id="how-do-function-bindings-usually-work" class="slide level2">
 <h2>How do function bindings usually work?</h2>
-<p><img data-src="images/udf_normal.png"> ## How do UDFs work?</p>
-<p><img data-src="images/udf.png"></p>
+
+<img data-src="images/udf_normal.png" class="r-stretch"></section>
+<section id="how-do-udfs-work" class="slide level2">
+<h2>How do UDFs work?</h2>
+
+<img data-src="images/udf.png" class="r-stretch"></section>
+<section id="a-function" class="slide level2">
+<h2>A function</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a></a>time_diff_minutes <span class="ot">&lt;-</span> <span class="cf">function</span>(pickup, dropoff){</span>
 <span id="cb1-2"><a></a>  <span class="fu">difftime</span>(dropoff, pickup, <span class="at">units =</span> <span class="st">"mins"</span>) <span class="sc">|&gt;</span></span>
@@ -683,9 +689,9 @@ So, we call `register_scalar_function()` to create it, and then then when we run
 <pre><code># A tibble: 3 × 3
   vendor_name full_name                    pickup_datetime    
   &lt;chr&gt;       &lt;chr&gt;                        &lt;dttm&gt;             
-1 CMT         Creative Mobile Technologies 2012-01-27 15:35:26
-2 CMT         Creative Mobile Technologies 2012-01-27 06:56:04
-3 CMT         Creative Mobile Technologies 2012-01-27 08:12:50</code></pre>
+1 CMT         Creative Mobile Technologies 2012-01-20 02:32:03
+2 CMT         Creative Mobile Technologies 2012-01-20 02:33:16
+3 CMT         Creative Mobile Technologies 2012-01-20 02:32:38</code></pre>
 </div>
 </div>
 <!-- 
@@ -865,7 +871,7 @@ Let's do 1 final thing to answer our borough to borough question!
 <span id="cb25-9"><a></a>  <span class="fu">collect</span>()</span>
 <span id="cb25-10"><a></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>177.061 sec elapsed</code></pre>
+<pre><code>180.734 sec elapsed</code></pre>
 </div>
 </div>
 <p><br></p>
