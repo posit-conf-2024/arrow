@@ -131,8 +131,8 @@ Please note everyone’s lanyard colors before taking a photo and respect their 
 
 ## Posit Workbench: Setup 🍽️
 
-- Default location: 🖱 `2`
-- Unzip 📁: 🖱 `3`
+- Default location: Yes!
+- Unzip 📁: Yes!
 - Open Session dialog box: Resource Profile >> select `Large`
 - Open + run `data/setup.R` 🎉
 
